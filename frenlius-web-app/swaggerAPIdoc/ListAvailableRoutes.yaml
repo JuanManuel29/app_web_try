@@ -1,0 +1,28 @@
+paths:
+  /list-routes:
+    get:
+      summary: Listar rutas de vuelo disponibles
+      description: Retorna todas las rutas de vuelo actualmente disponibles.
+      responses:
+        '200':
+          description: Lista obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  routes:
+                    type: array
+                    items:
+                      type: string
+                    example: {"routes": ["Ruta1", "Ruta2", "Ruta3"]}
+        '500':
+          description: Error interno al recuperar las rutas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: {"error": "Rutas no disponibles"}
