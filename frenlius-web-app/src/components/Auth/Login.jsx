@@ -174,7 +174,7 @@ const Login = ({ onSuccess, onSwitchToForgotPassword, onNewPasswordRequired }) =
                 !validation.username.isValid ? 'is-invalid' : 
                 formData.username && validation.username.isValid ? 'is-valid' : ''
               }`}
-              placeholder="tu_usuario"
+              placeholder="Username"
               value={formData.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
               disabled={loading}
@@ -210,7 +210,7 @@ const Login = ({ onSuccess, onSwitchToForgotPassword, onNewPasswordRequired }) =
                 !validation.password.isValid ? 'is-invalid' : 
                 formData.password && validation.password.isValid ? 'is-valid' : ''
               }`}
-              placeholder="Tu contraseña"
+              placeholder="Password"
               value={formData.password}
               onChange={(e) => handleInputChange('password', e.target.value)}
               disabled={loading}
