@@ -1,0 +1,380 @@
+/* ==========================================================================
+   NAVBAR MODERNO - ESTILOS ESPECÍFICOS
+   ========================================================================== */
+
+/* === NAVBAR BASE === */
+.navbar {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: var(--z-sticky);
+  min-height: 70px;
+}
+
+.navbar-transparent {
+  background: rgba(15, 23, 42, 0.8) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-scrolled {
+  background: rgba(15, 23, 42, 0.95) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+/* === BRAND MODERNO === */
+.navbar-brand {
+  font-weight: var(--font-weight-bold);
+  font-size: 1.5rem;
+  text-decoration: none;
+  color: white !important;
+  transition: all var(--transition-fast);
+  padding: 0.5rem 0;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+  color: white !important;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-primary);
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+  transition: all var(--transition-fast);
+}
+
+.navbar-brand:hover .brand-icon {
+  transform: rotate(15deg) scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.brand-text {
+  background: linear-gradient(135deg, #ffffff, #e2e8f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.025em;
+}
+
+/* === TOGGLER PERSONALIZADO === */
+.custom-toggler {
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  padding: 0.5rem;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.custom-toggler:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.custom-toggler:focus {
+  box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+
+.toggler-line {
+  width: 25px;
+  height: 2px;
+  background: white;
+  margin: 2px 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+}
+
+.custom-toggler.active .toggler-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.custom-toggler.active .toggler-line:nth-child(2) {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.custom-toggler.active .toggler-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* === NAVEGACIÓN LINKS === */
+.custom-nav-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: var(--font-weight-medium);
+  padding: 0.75rem 1rem !important;
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 0.25rem;
+  text-decoration: none;
+}
+
+.custom-nav-link:hover {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.custom-nav-link.active {
+  color: white !important;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.custom-nav-link.active::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 60%;
+  height: 2px;
+  background: var(--gradient-primary);
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.nav-icon {
+  font-size: 1rem;
+  margin-right: 0.5rem;
+  width: 18px;
+  text-align: center;
+}
+
+/* === INFORMACIÓN DE USUARIO === */
+.user-info {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-lg);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-fast);
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.user-avatar {
+  font-size: 1.5rem;
+  color: var(--color-primary-light);
+}
+
+.user-details {
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  color: white;
+  margin-bottom: 0.125rem;
+}
+
+.user-email {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === BOTONES MODERNOS === */
+.btn-modern {
+  border-radius: var(--border-radius-lg);
+  font-weight: var(--font-weight-medium);
+  padding: 0.625rem 1.25rem;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.btn-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-modern:hover::before {
+  left: 100%;
+}
+
+.btn-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-outline-light.btn-modern {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.btn-outline-light.btn-modern:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+}
+
+.btn-primary.btn-modern {
+  background: var(--gradient-primary);
+  border: none;
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary.btn-modern:hover {
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+/* === NAVBAR COLLAPSE === */
+.navbar-collapse {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* En desktop, siempre mostrar el contenido */
+@media (min-width: 992px) {
+  .navbar-collapse {
+    display: flex !important;
+    flex-basis: auto;
+  }
+  
+  .navbar-toggler {
+    display: none;
+  }
+}
+
+/* En mobile, usar el sistema de collapse */
+@media (max-width: 991.98px) {
+  .navbar-collapse.collapse {
+    display: block !important;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  .navbar-collapse.collapse.show {
+    height: auto;
+    opacity: 1;
+  }
+
+  .navbar-collapse.show {
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    margin: 1rem -1rem -1rem -1rem;
+    padding: 1rem;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .custom-nav-link {
+    margin: 0.25rem 0;
+    padding: 0.875rem 1rem !important;
+  }
+
+  .user-info {
+    margin: 1rem 0 0.5rem 0;
+    justify-content: center;
+  }
+
+  .btn-modern {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .navbar {
+    min-height: 60px;
+    padding: 0.5rem 0;
+  }
+
+  .brand-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 1rem;
+  }
+
+  .brand-text {
+    font-size: 1.25rem;
+  }
+
+  .custom-toggler {
+    width: 40px;
+    height: 40px;
+  }
+
+  .toggler-line {
+    width: 20px;
+  }
+}
+
+/* === EFECTOS ADICIONALES === */
+@keyframes navSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.navbar-nav .nav-item {
+  animation: navSlideIn 0.4s ease-out;
+}
+
+.navbar-nav .nav-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.navbar-nav .nav-item:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* === ACCESSIBILITY === */
+.custom-nav-link:focus,
+.btn-modern:focus,
+.custom-toggler:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+
+/* === DARK MODE READY === */
+@media (prefers-color-scheme: dark) {
+  .navbar-transparent {
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
+  
+  .navbar-scrolled {
+    background: rgba(0, 0, 0, 0.95) !important;
+  }
+}

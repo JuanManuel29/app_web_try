@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = ({ user, signOut, handleSignIn }) => {
   const [expanded, setExpanded] = useState(false);
   const navbarRef = React.useRef(null);
 
-  // Cierra el navbar cuando se hace clic en cualquier enlace/acción
+  // Función para cerrar el navbar
   const closeNavbar = () => {
     setExpanded(false);
   };
-
-  useEffect(() => {
-    setExpanded(false); // Solo se ejecuta al montar el componente
-  }, []);
 
   // Maneja el cierre al hacer clic fuera del navbar
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (navbarRef.current && 
           !navbarRef.current.contains(event.target) && 
-          !event.target.classList.contains('navbar-toggler') &&
           expanded) {
         closeNavbar();
       }
@@ -29,19 +24,22 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expanded]);
 
+  // Función para manejar el toggle del navbar
+  const toggleNavbar = () => {
+    setExpanded(!expanded);
+  };
+
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div className="container-fluid">
-        <Link className="navbar-brand" to="/" onClick={closeNavbar}>
+        <Link className="navbar-brand fw-bold" to="/" onClick={closeNavbar}>
           Frenlius App
         </Link>
         
         <button
           className="navbar-toggler"
           type="button"
-          onClick={() => {
-            setExpanded(!expanded);
-          }}
+          onClick={toggleNavbar}
           aria-expanded={expanded}
           aria-label="Toggle navigation"
         >
@@ -51,57 +49,43 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
         <div 
           ref={navbarRef}
           className={`collapse navbar-collapse ${expanded ? 'show' : ''}`}
-          style={{
-            transition: 'height 0.3s ease, opacity 0.3s ease',
-            overflow: 'hidden',
-            // Añade estas propiedades CSS para mayor control
-            height: expanded ? 'auto' : '0',
-            opacity: expanded ? '1' : '0'
-          }}
+          id="navbarNav"
         >
-          <ul className="navbar-nav me-auto">
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
               <Link 
-                className="nav-link" 
+                className={`nav-link custom-nav-link ${location.pathname === '/' ? 'active' : ''}`}
                 to="/" 
-                onClick={() => {
-                  closeNavbar();
-                  // Asegura que la página se scrollée al inicio
-                  window.scrollTo(0, 0);
-                }}
+                onClick={closeNavbar}
               >
-                Home
+                <i className="fas fa-home nav-icon"></i>
+                <span>Inicio</span>
               </Link>
             </li>
             <li className="nav-item">
               <Link 
-                className="nav-link" 
+                className={`nav-link custom-nav-link ${location.pathname === '/upload' ? 'active' : ''}`}
                 to="/upload" 
-                onClick={() => {
-                  closeNavbar();
-                  window.scrollTo(0, 0);
-                }}
+                onClick={closeNavbar}
               >
-                Upload Images
+                <i className="fas fa-cloud-upload-alt nav-icon"></i>
+                <span>Upload Images</span>
               </Link>
             </li>
           </ul>
           
-          <div className="d-flex">
+          <div className="d-flex align-items-center">
             {user ? (
               <>
-                <span className="navbar-text text-light me-3">
-                  Welcome, {user.attributes?.email || user.username}
-                </span>
                 <button 
                   onClick={() => {
                     signOut();
                     closeNavbar();
-                    window.scrollTo(0, 0);
                   }} 
-                  className="btn btn-outline-light"
+                  className="btn btn-outline-light btn-sm"
                 >
-                  Sign Out
+                  <i className="fas fa-sign-out-alt me-1"></i>
+                  Cerrar sesión
                 </button>
               </>
             ) : (
@@ -110,9 +94,10 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
                   handleSignIn();
                   closeNavbar();
                 }} 
-                className="btn btn-outline-light"
+                className="btn btn-outline-light btn-sm"
               >
-                Sign In
+                <i className="fas fa-sign-in-alt me-1"></i>
+                Iniciar sesión
               </button>
             )}
           </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Link } from 'react-router-dom';
 import { Amplify } from "aws-amplify";
-import { getCurrentUser, signOut, signInWithRedirect, fetchAuthSession } from '@aws-amplify/auth';
+import { getCurrentUser, signOut, fetchAuthSession } from '@aws-amplify/auth';
 import { Hub } from '@aws-amplify/core';
 import awsConfig from "./aws-export";
 
@@ -10,25 +10,20 @@ import Navbar from "./components/NavBar";
 import FlightSelection from "./components/FlightSelection";
 import ImageUpload from './components/ImageUpload';
 
+// Auth Components
+import Login from './components/Auth/Login';
+import ForgotPassword from './components/Auth/ForgotPassword';
+import NewPasswordRequired from './components/Auth/NewPasswordRequired';
+
 // Configure Amplify
 Amplify.configure(awsConfig);
-
-Hub.listen('auth', ({ payload }) => {
-  switch (payload.event) {
-    case 'signInWithRedirect':
-      getCurrentUser() // ✅ Usa la función importada
-        .then(user => console.log('Usuario autenticado:', user))
-        .catch(() => console.log('No autenticado'));
-      break;
-  }
-});
-
-
 
 function App() {
   const [selectedRoute, setSelectedRoute] = useState("");
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [authView, setAuthView] = useState('login'); // 'login' | 'forgotPassword' | 'newPasswordRequired'
+  const [newPasswordData, setNewPasswordData] = useState({ username: '', signInStep: null }); // Para cambio de contraseña obligatorio
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,12 +31,27 @@ function App() {
     const checkAuth = async () => {
       try {
         const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch (err) {
-        setUser(null);
-        if (window.location.pathname !== '/') {
-          navigate('/');
+        
+        // También obtener y almacenar el access token si no existe
+        try {
+          const session = await fetchAuthSession();
+          const accessToken = session.tokens?.accessToken?.toString();
+          
+          if (accessToken && !sessionStorage.getItem('accessToken')) {
+            sessionStorage.setItem('accessToken', accessToken);
+            console.log('Access token restaurado en sesión existente');
+          }
+        } catch (tokenError) {
+          console.log('No se pudo obtener access token en verificación:', tokenError);
         }
+        
+        setUser(currentUser);
+        console.log('Usuario autenticado:', currentUser);
+      } catch (err) {
+        console.log('Usuario no autenticado:', err);
+        setUser(null);
+        // Limpiar token si no hay usuario autenticado
+        sessionStorage.removeItem('accessToken');
       } finally {
         setAuthChecked(true);
       }
@@ -51,15 +61,22 @@ function App() {
 
     // Listen for auth events
     const hubListener = Hub.listen('auth', ({ payload }) => {
+      console.log('Auth event:', payload.event);
       switch (payload.event) {
         case 'signedIn':
-          getCurrentUser().then(user => {
-            setUser(user);
-            navigate('/');
-          });
+          getCurrentUser()
+            .then(user => {
+              console.log('Usuario logueado:', user);
+              setUser(user);
+              setAuthView('login'); // Reset auth view
+              navigate('/');
+            })
+            .catch(err => console.log('Error obteniendo usuario:', err));
           break;
         case 'signedOut':
+          console.log('Usuario deslogueado');
           setUser(null);
+          setAuthView('login'); // Reset to login view
           navigate('/');
           break;
       }
@@ -72,81 +89,213 @@ function App() {
     try {
       await signOut();
       setUser(null);
+      setAuthView('login');
+      // Limpiar access token al cerrar sesión
+      sessionStorage.removeItem('accessToken');
+      console.log('Sign out exitoso y token eliminado');
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
-  const handleSignIn = async () => {
-    try {
-
-      console.log('Config:', Amplify.getConfig().Auth);
-
-      await signInWithRedirect({
-        provider: 'Cognito',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-    } catch (error) {
-      console.error('Error signing in:', error);
-      // Fallback manual
-      window.location.href = `https://${awsConfig.Auth.Cognito.loginWith.oauth.domain}/oauth2/authorize?client_id=${awsConfig.Auth.Cognito.userPoolClientId}&response_type=code&scope=email+openid+profile&redirect_uri=${window.location.origin}`;
-    }
+  // Auth Success Handler
+  const handleAuthSuccess = () => {
+    // El Hub listener se encargará de actualizar el estado del usuario
+    console.log('Autenticación exitosa');
   };
 
+  // Auth View Switchers
+  const switchToLogin = () => setAuthView('login');
+  const switchToForgotPassword = () => setAuthView('forgotPassword');
+  const switchToNewPasswordRequired = (username, signInStep) => {
+    setNewPasswordData({ username, signInStep });
+    setAuthView('newPasswordRequired');
+  };
+
+  // Loading state
   if (!authChecked) {
-    return <div className="text-center mt-5">Cargando...</div>;
+    return (
+      <div className="loading-container">
+        <div className="text-center">
+          <div className="loading-spinner">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando...</span>
+            </div>
+          </div>
+          <div className="loading-text mt-4">
+            <h5 className="mb-2">Verificando autenticación...</h5>
+            <p className="text-muted mb-0">Por favor espera un momento</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
+  // Si no está autenticado, mostrar componentes de autenticación
+  if (!user) {
+    return (
+      <div className="auth-app">
+        {authView === 'login' && (
+          <Login
+            onSuccess={handleAuthSuccess}
+            onSwitchToForgotPassword={switchToForgotPassword}
+            onNewPasswordRequired={switchToNewPasswordRequired}
+          />
+        )}
+        
+        {authView === 'forgotPassword' && (
+          <ForgotPassword
+            onSuccess={() => {
+              // Después de cambiar contraseña exitosamente, ir al login
+              setAuthView('login');
+            }}
+            onSwitchToLogin={switchToLogin}
+          />
+        )}
+
+        {authView === 'newPasswordRequired' && (
+          <NewPasswordRequired
+            username={newPasswordData.username}
+            signInStep={newPasswordData.signInStep}
+            onSuccess={handleAuthSuccess}
+            onBackToLogin={switchToLogin}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Usuario autenticado - mostrar aplicación principal
   return (
     <>
-      <Navbar user={user} signOut={handleSignOut} handleSignIn={handleSignIn} />
-      <div className="container mt-5">
+      <Navbar user={user} signOut={handleSignOut} />
+      <div className="main-content">
         <Routes>
           <Route 
             path="/" 
             element={
-              user ? (
-                <div className="text-center">
-                  <h1 className="text-navy">¡Bienvenido {user.username}!</h1>
-                  <p>Selecciona "Upload Images" en el menú para comenzar.</p>
+              <div className="hero-section">
+                <div className="welcome-container">
+                  <div className="welcome-card glass-effect">
+                    <div className="welcome-header">
+                      <div className="welcome-icon">
+                        <i className="fas fa-rocket"></i>
+                      </div>
+                      <h1 className="welcome-title">
+                        ¡Bienvenido de vuelta, <span className="gradient-text">{user.username}</span>!
+                      </h1>
+                      <p className="welcome-subtitle">
+                        Gestiona tus imágenes de vuelo de manera fácil y eficiente
+                      </p>
+                    </div>
+                    
+                    <div className="quick-actions">
+                      <div className="row g-4">
+                        <div className="col-md-6">
+                          <div className="action-card">
+                            <div className="action-icon">
+                              <i className="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h4>Subir Imágenes</h4>
+                            <p>Carga tus nuevas imágenes de vuelo</p>
+                            <Link to="/upload" className="btn btn-primary btn-modern">
+                              Comenzar <i className="fas fa-arrow-right ms-1"></i>
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="col-md-6">
+                          <div className="action-card">
+                            <div className="action-icon secondary">
+                              <i className="fas fa-images"></i>
+                            </div>
+                            <h4>Mis Vuelos</h4>
+                            <p>Visualiza tus vuelos almacenados</p>
+                            <button className="btn btn-outline-primary btn-modern" disabled>
+                              Próximamente <i className="fas fa-clock ms-1"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Info Section */}
+                    <div className="user-info-section">
+                      <div className="user-stats">
+                        <div className="stat-item">
+                          <div className="stat-icon">
+                            <i className="fas fa-user-circle"></i>
+                          </div>
+                          <div className="stat-content">
+                            <h6>Usuario</h6>
+                            <p>{user.attributes?.email || user.username}</p>
+                          </div>
+                        </div>
+                        <div className="stat-item">
+                          <div className="stat-icon">
+                            <i className="fas fa-calendar-check"></i>
+                          </div>
+                          <div className="stat-content">
+                            <h6>Miembro desde</h6>
+                            <p>
+                              {user.attributes?.email_verified === 'true' ? 'Verificado' : 'Pendiente'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center">
-                  <h1 className="text-navy">Haz click para iniciar sesión</h1>
-                  <button 
-                    onClick={handleSignIn} 
-                    className="btn btn-primary"
-                  >
-                    Iniciar sesión
-                  </button>
-                </div>
-              )
+              </div>
             } 
           />
+          
           <Route 
             path="/upload" 
             element={
-              user ? (
-                <>
-                  <div className="text-center">
-                    <h1 className="text-navy">Subir imágenes de vuelo</h1>
+              <div className="upload-page">
+                <div className="page-header">
+                  <div className="container">
+                    <div className="header-content">
+                      <div className="header-icon">
+                        <i className="fas fa-cloud-upload-alt"></i>
+                      </div>
+                      <div className="header-text">
+                        <h1 className="page-title">Subir Imágenes de Vuelo</h1>
+                        <p className="page-subtitle">Selecciona una ruta de vuelo y carga tus imágenes</p>
+                      </div>
+                    </div>
                   </div>
-                  <FlightSelection onRouteSelect={setSelectedRoute} />
-                  {selectedRoute && <ImageUpload selectedRoute={selectedRoute} />}
-                </>
-              ) : (
-                <div className="text-center">
-                  <h2 className="text-danger">Debes iniciar sesión para acceder</h2>
-                  <button 
-                    onClick={handleSignIn} 
-                    className="btn btn-primary mt-3"
-                  >
-                    Iniciar sesión
-                  </button>
                 </div>
-              )
+                
+                <div className="container">
+                  <div className="upload-content">
+                    <FlightSelection onRouteSelect={setSelectedRoute} />
+                    {selectedRoute && <ImageUpload selectedRoute={selectedRoute} />}
+                  </div>
+                </div>
+              </div>
+            } 
+          />
+          
+          {/* Ruta de fallback */}
+          <Route 
+            path="*" 
+            element={
+              <div className="not-found-page">
+                <div className="container">
+                  <div className="not-found-content">
+                    <div className="not-found-icon">
+                      <i className="fas fa-plane-slash"></i>
+                    </div>
+                    <h2>Página no encontrada</h2>
+                    <p>La página que buscas no existe o ha sido movida.</p>
+                    <Link to="/" className="btn btn-primary btn-modern">
+                      <i className="fas fa-home me-2"></i>
+                      Volver al inicio
+                    </Link>
+                  </div>
+                </div>
+              </div>
             } 
           />
         </Routes>
@@ -156,5 +305,3 @@ function App() {
 }
 
 export default App;
-
-
