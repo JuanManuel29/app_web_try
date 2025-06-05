@@ -89,6 +89,7 @@
 
 .custom-toggler:focus {
   box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+  outline: none;
 }
 
 .toggler-line {
@@ -96,10 +97,12 @@
   height: 2px;
   background: white;
   margin: 2px 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 2px;
+  transform-origin: center;
 }
 
+/* Animación hamburguesa → X */
 .custom-toggler.active .toggler-line:nth-child(1) {
   transform: rotate(45deg) translate(5px, 5px);
 }
@@ -111,6 +114,25 @@
 
 .custom-toggler.active .toggler-line:nth-child(3) {
   transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Efecto de ondulación en el botón */
+.custom-toggler::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+}
+
+.custom-toggler:active::before {
+  width: 60px;
+  height: 60px;
 }
 
 /* === NAVEGACIÓN LINKS === */
@@ -256,7 +278,7 @@
 
 /* === NAVBAR COLLAPSE === */
 .navbar-collapse {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* En desktop, siempre mostrar el contenido */
@@ -271,42 +293,110 @@
   }
 }
 
-/* En mobile, usar el sistema de collapse */
+/* En mobile, usar el sistema de collapse mejorado */
 @media (max-width: 991.98px) {
-  .navbar-collapse.collapse {
-    display: block !important;
-    height: 0;
-    opacity: 0;
+  .navbar-collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     overflow: hidden;
-  }
-
-  .navbar-collapse.collapse.show {
-    height: auto;
-    opacity: 1;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
   }
 
   .navbar-collapse.show {
-    background: rgba(15, 23, 42, 0.98);
-    backdrop-filter: blur(20px);
-    margin: 1rem -1rem -1rem -1rem;
-    padding: 1rem;
-    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 400px;
+    opacity: 1;
+    transform: translateY(0);
+    padding: var(--spacing-lg);
+  }
+
+  .navbar-nav {
+    animation: slideInItems 0.6s ease-out;
   }
 
   .custom-nav-link {
     margin: 0.25rem 0;
     padding: 0.875rem 1rem !important;
+    border-radius: var(--border-radius-md);
+    transform: translateX(-20px);
+    opacity: 0;
+    animation: slideInLink 0.3s ease-out forwards;
   }
+
+  .custom-nav-link:nth-child(1) { animation-delay: 0.1s; }
+  .custom-nav-link:nth-child(2) { animation-delay: 0.15s; }
+  .custom-nav-link:nth-child(3) { animation-delay: 0.2s; }
 
   .user-info {
     margin: 1rem 0 0.5rem 0;
     justify-content: center;
+    transform: translateY(20px);
+    opacity: 0;
+    animation: slideInUserInfo 0.4s ease-out 0.2s forwards;
   }
 
   .btn-modern {
     width: 100%;
     margin-top: 0.5rem;
+    transform: translateY(20px);
+    opacity: 0;
+    animation: slideInButton 0.4s ease-out 0.25s forwards;
+  }
+}
+
+/* Animaciones personalizadas */
+@keyframes slideInItems {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLink {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUserInfo {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInButton {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

@@ -17,7 +17,7 @@ apiClient.interceptors.request.use(
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log(`🔐 Token agregado a request: ${config.method?.toUpperCase()} ${config.url}`);
+        //console.log(`🔐 Token agregado a request: ${config.method?.toUpperCase()} ${config.url}`);
       } else {
         console.warn('⚠️ No hay token disponible para la request');
       }

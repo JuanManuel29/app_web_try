@@ -34,9 +34,9 @@ export const setStoredAccessToken = (token) => {
 export const removeStoredAccessToken = () => {
   try {
     sessionStorage.removeItem('accessToken');
-    console.log('Access token eliminado del storage');
+    //console.log('Access token eliminado del storage');
   } catch (error) {
-    console.error('Error eliminando token del storage:', error);
+    //console.error('Error eliminando token del storage:', error);
   }
 };
 

@@ -9,6 +9,7 @@ import awsConfig from "./aws-export";
 import Navbar from "./components/NavBar";
 import FlightSelection from "./components/FlightSelection";
 import ImageUpload from './components/ImageUpload';
+import FlightViewer from './components/FlightViewer';
 
 // Auth Components
 import Login from './components/Auth/Login';
@@ -46,7 +47,7 @@ function App() {
         }
         
         setUser(currentUser);
-        console.log('Usuario autenticado:', currentUser);
+        //console.log('Usuario autenticado:', currentUser);
       } catch (err) {
         console.log('Usuario no autenticado:', err);
         setUser(null);
@@ -209,10 +210,10 @@ function App() {
                               <i className="fas fa-images"></i>
                             </div>
                             <h4>Mis Vuelos</h4>
-                            <p>Visualiza tus vuelos almacenados</p>
-                            <button className="btn btn-outline-primary btn-modern" disabled>
-                              Próximamente <i className="fas fa-clock ms-1"></i>
-                            </button>
+                            <p>Visualiza y gestiona tus vuelos almacenados</p>
+                            <Link to="/flights" className="btn btn-primary btn-modern">
+                              Ver Vuelos <i className="fas fa-arrow-right ms-1"></i>
+                            </Link>
                           </div>
                         </div>
                       </div>
@@ -271,6 +272,34 @@ function App() {
                   <div className="upload-content">
                     <FlightSelection onRouteSelect={setSelectedRoute} />
                     {selectedRoute && <ImageUpload selectedRoute={selectedRoute} />}
+                  </div>
+                </div>
+              </div>
+            } 
+          />
+          
+          {/* Nueva Ruta: Mis Vuelos */}
+          <Route 
+            path="/flights" 
+            element={
+              <div className="flights-page">
+                <div className="page-header">
+                  <div className="container">
+                    <div className="header-content">
+                      <div className="header-icon">
+                        <i className="fas fa-images"></i>
+                      </div>
+                      <div className="header-text">
+                        <h1 className="page-title">Mis Vuelos</h1>
+                        <p className="page-subtitle">Explora y visualiza las imágenes de tus vuelos</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="container">
+                  <div className="flights-content">
+                    <FlightViewer />
                   </div>
                 </div>
               </div>

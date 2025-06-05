@@ -129,12 +129,11 @@ const ImageUpload = ({ selectedRoute }) => {
     const imageNames = images.map(image => `${selectedRoute}/${image.name}`).join(',');
 
     try {
-      // Usar URL completa como en FlightSelection
       const data = await apiPost('https://xsw6ikn9dd.execute-api.us-east-2.amazonaws.com/prod/upload-image', {
         image_keys: imageNames
       });
 
-      console.log('Respuesta completa de apiPost:', data); // ← DEBUG
+      console.log('Respuesta completa de apiPost:', data);
       
       // Verificar si urls está en data directamente o en data.data
       const urls = data.urls || data.data?.urls || data;
