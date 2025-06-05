@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { apiGet } from '../services/apiClient';
 import LazyImage from './LazyImage';
+import LoadMoreButton from './LoadMoreButton';
+import usePaginatedImages from '../hooks/usePaginatedImages';
 
 const FlightViewer = () => {
   // Estados principales
@@ -8,12 +10,10 @@ const FlightViewer = () => {
   const [selectedRoute, setSelectedRoute] = useState('');
   const [flights, setFlights] = useState([]);
   const [selectedFlight, setSelectedFlight] = useState('');
-  const [images, setImages] = useState([]);
   
   // Estados de carga
   const [loadingRoutes, setLoadingRoutes] = useState(true);
   const [loadingFlights, setLoadingFlights] = useState(false);
-  const [loadingImages, setLoadingImages] = useState(false);
   
   // Estados de error
   const [error, setError] = useState('');
@@ -21,6 +21,18 @@ const FlightViewer = () => {
   // Estado para lightbox
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Hook personalizado para manejo de imágenes paginadas
+  const {
+    images,
+    loading: loadingImages,
+    error: imagesError,
+    hasMore,
+    remainingImages,
+    loadMoreImages,
+    pagination,
+    isInitialized
+  } = usePaginatedImages(selectedFlight, 9); // 9 imágenes por página
 
   // Cargar rutas al montar el componente
   useEffect(() => {
@@ -32,16 +44,8 @@ const FlightViewer = () => {
     if (selectedRoute) {
       fetchFlights(selectedRoute);
       setSelectedFlight('');
-      setImages([]);
     }
   }, [selectedRoute]);
-
-  // Cargar imágenes cuando se selecciona un vuelo
-  useEffect(() => {
-    if (selectedFlight) {
-      fetchImages(selectedFlight);
-    }
-  }, [selectedFlight]);
 
   // Obtener rutas disponibles
   const fetchRoutes = async () => {
@@ -53,7 +57,7 @@ const FlightViewer = () => {
       const data = response.data.routes;
       
       setRoutes(data);
-      console.log('Rutas cargadas:', data);
+      //console.log('Rutas cargadas:', data);
     } catch (error) {
       console.error('Error cargando rutas:', error);
       
@@ -118,77 +122,6 @@ const FlightViewer = () => {
     }
   };
 
-  // Obtener imágenes para un vuelo específico
-  const fetchImages = async (flightName) => {
-    try {
-      setLoadingImages(true);
-      setError('');
-      
-      console.log('🔍 Llamando API de imágenes para:', flightName);
-      console.log('🔍 URL completa:', `https://fcjh115tmc.execute-api.us-east-2.amazonaws.com/prod/list-images/${flightName}`);
-      
-      // Usar tu API real de imágenes
-      const response = await apiGet(`https://fcjh115tmc.execute-api.us-east-2.amazonaws.com/prod/list-images/${flightName}`);
-      
-      console.log('🔍 Respuesta completa:', response);
-      console.log('🔍 Response.data:', response.data);
-      
-      // Manejar la estructura de respuesta de API Gateway
-      let apiData;
-      if (response.data.body) {
-        // Si la respuesta viene con body como string (API Gateway)
-        apiData = JSON.parse(response.data.body);
-        console.log('🔍 Data parseada desde body:', apiData);
-      } else {
-        // Si la respuesta viene directamente
-        apiData = response.data;
-        console.log('🔍 Data directa:', apiData);
-      }
-      
-      console.log('🔍 ApiData.images:', apiData.images);
-      
-      // Verificar que exista el array de imágenes
-      if (!apiData.images || !Array.isArray(apiData.images)) {
-        console.error('❌ No hay array de imágenes en la respuesta:', apiData);
-        setError('No se encontraron imágenes en la respuesta del servidor.');
-        setImages([]);
-        return;
-      }
-      
-      // Transformar la respuesta de tu API al formato que espera el componente
-      const transformedImages = apiData.images.map((image, index) => ({
-        id: index + 1,
-        src: image.url, // URL pre-firmada de tu API
-        thumbnail: image.url, // Usando la misma URL como thumbnail por ahora
-        alt: `${image.filename} del vuelo ${flightName}`,
-        name: image.filename,
-        size: formatFileSize(image.size || 0),
-        uploadDate: image.last_modified || new Date().toISOString(),
-        key: image.key,
-        etag: image.etag
-      }));
-      
-      setImages(transformedImages);
-      console.log('Imágenes cargadas:', transformedImages);
-    } catch (error) {
-      console.error('Error cargando imágenes:', error);
-      
-      // Manejar errores específicos
-      if (error.response?.status === 401 || error.authExpired) {
-        setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
-      } else if (error.response?.status === 403) {
-        setError('No tienes permisos para acceder a las imágenes de este vuelo.');
-      } else if (error.response?.status === 404) {
-        setError('No se encontraron imágenes para este vuelo.');
-      } else {
-        setError('No se pudieron cargar las imágenes para este vuelo.');
-      }
-      setImages([]);
-    } finally {
-      setLoadingImages(false);
-    }
-  };
-
   // Función auxiliar para extraer fecha del nombre del vuelo
   const extractDateFromFlightName = (flightName) => {
     try {
@@ -239,15 +172,6 @@ const FlightViewer = () => {
     });
   };
 
-  // Formatear tamaño de archivo
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   // Manejar selección de ruta
   const handleRouteSelect = (event) => {
     setSelectedRoute(event.target.value);
@@ -271,7 +195,6 @@ const FlightViewer = () => {
     setSelectedRoute('');
     setSelectedFlight('');
     setFlights([]);
-    setImages([]);
     setError('');
   };
 
@@ -373,10 +296,10 @@ const FlightViewer = () => {
       </div>
 
       {/* Error Message */}
-      {error && (
+      {(error || imagesError) && (
         <div className="error-message mb-4">
           <i className="fas fa-exclamation-triangle me-2"></i>
-          {error}
+          {error || imagesError}
         </div>
       )}
 
@@ -501,7 +424,7 @@ const FlightViewer = () => {
         </div>
       )}
 
-      {/* Image Gallery */}
+      {/* Image Gallery - SISTEMA HÍBRIDO CON PROGRESO INTEGRADO */}
       {selectedFlight && (
         <div className="images-section">
           <div className="section-header">
@@ -520,7 +443,8 @@ const FlightViewer = () => {
             </div>
           </div>
 
-          {loadingImages ? (
+          {/* Estado inicial de carga */}
+          {!isInitialized && loadingImages ? (
             <div className="images-loading">
               <div className="loading-spinner">
                 <div className="spinner-border text-primary" role="status">
@@ -529,7 +453,7 @@ const FlightViewer = () => {
               </div>
               <p className="loading-text">Cargando imágenes del vuelo {selectedFlight}...</p>
             </div>
-          ) : images.length === 0 ? (
+          ) : images.length === 0 && !loadingImages ? (
             <div className="empty-state">
               <div className="empty-icon">
                 <i className="fas fa-image-slash"></i>
@@ -539,15 +463,7 @@ const FlightViewer = () => {
             </div>
           ) : (
             <>
-              <div className="images-info">
-                <span className="images-count">
-                  {images.length} {images.length === 1 ? 'imagen' : 'imágenes'}
-                </span>
-                <span className="flight-info">
-                  Vuelo: <strong>{selectedFlight}</strong>
-                </span>
-              </div>
-              
+              {/* Grid de imágenes */}
               <div className="images-grid">
                 {images.map((image, index) => (
                   <div
@@ -565,19 +481,28 @@ const FlightViewer = () => {
                     />
                     <div className="image-info">
                       <div className="image-name" title={image.name}>{image.name}</div>
-                      {/* <div className="image-meta">
-                        <span className="image-size">{image.size}</span>
-                      </div> */}
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/* NUEVO: LoadMoreButton integrado con progreso completo */}
+              <LoadMoreButton
+                onClick={loadMoreImages}
+                loading={loadingImages}
+                remainingImages={remainingImages}
+                totalImages={pagination.total_images}
+                loadedImages={images.length}
+                pageSize={9}
+                disabled={!hasMore}
+                className="centered"
+              />
             </>
           )}
         </div>
       )}
 
-      {/* Enhanced Lightbox Modal */}
+      {/* Enhanced Lightbox Modal - SIN CAMBIOS */}
       {lightboxOpen && images.length > 0 && (
         <div className="lightbox-overlay" onClick={() => setLightboxOpen(false)}>
           <div className="lightbox-container" onClick={(e) => e.stopPropagation()}>
@@ -589,16 +514,6 @@ const FlightViewer = () => {
                 </div>
               </div>
               <div className="lightbox-actions">
-                {/* <a
-                  href={images[currentImageIndex]?.src}
-                  download={images[currentImageIndex]?.name}
-                  className="lightbox-download"
-                  title="Descargar imagen"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <i className="fas fa-download"></i>
-                </a> */}
                 <button
                   className="lightbox-close"
                   onClick={() => setLightboxOpen(false)}
@@ -635,9 +550,6 @@ const FlightViewer = () => {
               
               <div className="lightbox-counter">
                 {currentImageIndex + 1} de {images.length}
-                {/* <div className="lightbox-info">
-                  {images[currentImageIndex]?.size}
-                </div> */}
               </div>
               
               <button

@@ -17,7 +17,6 @@ apiClient.interceptors.request.use(
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        //console.log(`🔐 Token agregado a request: ${config.method?.toUpperCase()} ${config.url}`);
       } else {
         console.warn('⚠️ No hay token disponible para la request');
       }
@@ -37,7 +36,6 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     // Request exitosa, retornar response
-    console.log(`✅ Response exitosa: ${response.status} ${response.config.url}`);
     return response;
   },
   async (error) => {
@@ -45,7 +43,6 @@ apiClient.interceptors.response.use(
     
     // Si es error 401 (Unauthorized)
     if (error.response?.status === 401) {
-      console.warn('🔒 Error 401: Token inválido o expirado');
       
       // Limpiar token inválido
       removeStoredAccessToken();
@@ -59,7 +56,6 @@ apiClient.interceptors.response.use(
           const freshToken = await getAccessToken();
           
           if (freshToken) {
-            console.log('🔄 Reintentando request con token fresco');
             originalRequest.headers.Authorization = `Bearer ${freshToken}`;
             return apiClient(originalRequest);
           }

@@ -104,7 +104,7 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
               </Link>
             </li>
             
-            {/* Mis Vuelos - YA NO ESTÁ DESHABILITADO */}
+            {/* Mis Vuelos */}
             <li className="nav-item">
               <Link 
                 className={`nav-link custom-nav-link ${isActiveLink('/flights') ? 'active' : ''}`}
@@ -113,6 +113,18 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
               >
                 <i className="fas fa-images nav-icon"></i>
                 <span>Mis Vuelos</span>
+              </Link>
+            </li>
+
+            {/* NUEVO: Stream en Vivo */}
+            <li className="nav-item">
+              <Link 
+                className={`nav-link custom-nav-link ${isActiveLink('/live') ? 'active' : ''}`}
+                to="/live" 
+                onClick={closeNavbar}
+              >
+                <i className="fas fa-broadcast-tower nav-icon"></i>
+                <span>Stream en Vivo</span>
               </Link>
             </li>
           </ul>

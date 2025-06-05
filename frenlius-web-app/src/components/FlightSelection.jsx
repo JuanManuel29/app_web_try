@@ -16,14 +16,13 @@ const FlightSelection = ({ onRouteSelect }) => {
         const fetchRoutes = async () => {
             try {
                 setLoading(true);
-                console.log('Llamando API /list-routes con autenticación...');
-                
+                            
                 const response = await apiGet("https://9qqsfb1gy1.execute-api.us-east-2.amazonaws.com/prod/list-routes");
                 
                 const data = response.data.routes;
                 setRoutes(data);
                 setError("");
-                console.log('Rutas obtenidas exitosamente:', data);
+                //console.log('Rutas obtenidas exitosamente:', data);
             } catch (error) {
                 console.error("Error al obtener rutas:", error);
                 

@@ -8,7 +8,7 @@ export const getStoredAccessToken = () => {
   try {
     return sessionStorage.getItem('accessToken');
   } catch (error) {
-    console.error('Error obteniendo token del storage:', error);
+    //console.error('Error obteniendo token del storage:', error);
     return null;
   }
 };
@@ -21,10 +21,10 @@ export const setStoredAccessToken = (token) => {
   try {
     if (token) {
       sessionStorage.setItem('accessToken', token);
-      console.log('Access token almacenado correctamente');
+      //console.log('Access token almacenado correctamente');
     }
   } catch (error) {
-    console.error('Error almacenando token:', error);
+    //console.error('Error almacenando token:', error);
   }
 };
 
@@ -47,11 +47,11 @@ export const removeStoredAccessToken = () => {
 export const getFreshAccessToken = async () => {
   try {
     const session = await fetchAuthSession();
-    console.log('Session obtenida:', session); // DEBUG
+    //console.log('Session obtenida:', session); // DEBUG
     
     // CAMBIO CRÍTICO: Usar ID token en lugar de access token
     const idToken = session.tokens?.idToken?.toString();
-    console.log('ID token extraído:', idToken ? 'Token obtenido' : 'Token no encontrado'); // DEBUG
+    //console.log('ID token extraído:', idToken ? 'Token obtenido' : 'Token no encontrado'); // DEBUG
     
     if (idToken) {
       setStoredAccessToken(idToken);
@@ -60,7 +60,7 @@ export const getFreshAccessToken = async () => {
     
     return null;
   } catch (error) {
-    console.error('Error obteniendo ID token fresco:', error);
+    //console.error('Error obteniendo ID token fresco:', error);
     return null;
   }
 };
@@ -78,7 +78,7 @@ export const getAccessToken = async () => {
   }
   
   // Si no hay token en storage, obtener uno fresco
-  console.log('No hay token en storage, obteniendo token fresco...');
+  //console.log('No hay token en storage, obteniendo token fresco...');
   return await getFreshAccessToken();
 };
 
@@ -105,7 +105,7 @@ export const getAuthHeaders = async () => {
     };
   }
   
-  console.warn('No hay access token disponible para la API call');
+  //console.warn('No hay access token disponible para la API call');
   return {
     'Content-Type': 'application/json'
   };

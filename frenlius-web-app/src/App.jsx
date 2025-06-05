@@ -10,6 +10,7 @@ import Navbar from "./components/NavBar";
 import FlightSelection from "./components/FlightSelection";
 import ImageUpload from './components/ImageUpload';
 import FlightViewer from './components/FlightViewer';
+import LiveStreamPage from './pages/LiveStreamPage';
 
 // Auth Components
 import Login from './components/Auth/Login';
@@ -186,13 +187,13 @@ function App() {
                         ¡Bienvenido de vuelta, <span className="gradient-text">{user.username}</span>!
                       </h1>
                       <p className="welcome-subtitle">
-                        Gestiona tus imágenes de vuelo de manera fácil y eficiente
+                        Gestiona tus imágenes de vuelo y accede a contenido en vivo
                       </p>
                     </div>
                     
                     <div className="quick-actions">
                       <div className="row g-4">
-                        <div className="col-md-6">
+                        <div className="col-lg-3 col-md-6">
                           <div className="action-card">
                             <div className="action-icon">
                               <i className="fas fa-cloud-upload-alt"></i>
@@ -200,11 +201,11 @@ function App() {
                             <h4>Subir Imágenes</h4>
                             <p>Carga tus nuevas imágenes de vuelo</p>
                             <Link to="/upload" className="btn btn-primary btn-modern">
-                              Comenzar <i className="fas fa-arrow-right ms-1"></i>
+                              Subir imagen <i className="fas fa-arrow-right ms-1"></i>
                             </Link>
                           </div>
                         </div>
-                        <div className="col-md-6">
+                        <div className="col-lg-3 col-md-6">
                           <div className="action-card">
                             <div className="action-icon secondary">
                               <i className="fas fa-images"></i>
@@ -214,6 +215,30 @@ function App() {
                             <Link to="/flights" className="btn btn-primary btn-modern">
                               Ver Vuelos <i className="fas fa-arrow-right ms-1"></i>
                             </Link>
+                          </div>
+                        </div>
+                        <div className="col-lg-3 col-md-6">
+                          <div className="action-card">
+                            <div className="action-icon" style={{background: 'linear-gradient(135deg, #ef4444, #dc2626)'}}>
+                              <i className="fas fa-broadcast-tower"></i>
+                            </div>
+                            <h4>Stream en Vivo</h4>
+                            <p>Accede a transmisiones en tiempo real</p>
+                            <Link to="/live" className="btn btn-primary btn-modern">
+                              Ver Stream <i className="fas fa-arrow-right ms-1"></i>
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="col-lg-3 col-md-6">
+                          <div className="action-card">
+                            <div className="action-icon" style={{background: 'linear-gradient(135deg, #10b981, #059669)'}}>
+                              <i className="fas fa-chart-line"></i>
+                            </div>
+                            <h4>Próximamente</h4>
+                            <p>Nuevas características en desarrollo</p>
+                            <button className="btn btn-secondary btn-modern" disabled>
+                              Pronto <i className="fas fa-clock ms-1"></i>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -278,7 +303,6 @@ function App() {
             } 
           />
           
-          {/* Nueva Ruta: Mis Vuelos */}
           <Route 
             path="/flights" 
             element={
@@ -304,6 +328,12 @@ function App() {
                 </div>
               </div>
             } 
+          />
+
+          {/* NUEVA RUTA: Stream en Vivo */}
+          <Route 
+            path="/live" 
+            element={<LiveStreamPage />} 
           />
           
           {/* Ruta de fallback */}
