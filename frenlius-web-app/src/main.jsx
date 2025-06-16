@@ -11,6 +11,7 @@ import "./styles/pages-styles.css";
 import "./styles/components-styles.css";
 import "./styles/auth-styles.css";
 import "./styles/flight-viewer-styles.css";
+import "./styles/notification-styles.css";
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(

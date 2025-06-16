@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
 
 const Navbar = ({ user, signOut, handleSignIn }) => {
   const [expanded, setExpanded] = useState(false);
@@ -116,7 +117,7 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
               </Link>
             </li>
 
-            {/* NUEVO: Stream en Vivo */}
+            {/* Stream en Vivo */}
             <li className="nav-item">
               <Link 
                 className={`nav-link custom-nav-link ${isActiveLink('/live') ? 'active' : ''}`}
@@ -127,12 +128,27 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
                 <span>Stream en Vivo</span>
               </Link>
             </li>
+
+            {/* NUEVO: Notificaciones */}
+            <li className="nav-item">
+              <Link 
+                className={`nav-link custom-nav-link ${isActiveLink('/notifications') ? 'active' : ''}`}
+                to="/notifications" 
+                onClick={closeNavbar}
+              >
+                <i className="fas fa-bell nav-icon"></i>
+                <span>Notificaciones</span>
+              </Link>
+            </li>
           </ul>
           
           {/* User Section */}
           <div className="d-flex align-items-center">
             {user ? (
               <div className="d-flex align-items-center gap-3">
+                {/* NUEVO: Campanita de notificaciones */}
+                <NotificationBell />
+
                 {/* User Info */}
                 <div className="user-info d-none d-md-flex align-items-center">
                   <div className="user-avatar me-2">

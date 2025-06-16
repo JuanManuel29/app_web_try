@@ -18,6 +18,9 @@ import Login from './components/Auth/Login';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import NewPasswordRequired from './components/Auth/NewPasswordRequired';
 
+// Notification Context
+import { NotificationProvider } from './contexts/NotificationContext';
+
 // Configure Amplify
 Amplify.configure(awsConfig);
 
@@ -168,9 +171,9 @@ function App() {
     );
   }
 
-  // Usuario autenticado - mostrar aplicación principal
+  // Usuario autenticado - mostrar aplicación principal con NotificationProvider
   return (
-    <>
+    <NotificationProvider>
       <Navbar user={user} signOut={handleSignOut} />
       <div className="main-content">
         <Routes>
@@ -331,10 +334,41 @@ function App() {
             } 
           />
 
-          {/* NUEVA RUTA: Stream en Vivo */}
+          {/* Stream en Vivo */}
           <Route 
             path="/live" 
             element={<LiveStreamPage />} 
+          />
+
+          {/* NUEVA RUTA: Página de Notificaciones */}
+          <Route 
+            path="/notifications" 
+            element={
+              <div className="notifications-page">
+                <div className="page-header">
+                  <div className="container">
+                    <div className="header-content">
+                      <div className="header-icon">
+                        <i className="fas fa-bell"></i>
+                      </div>
+                      <div className="header-text">
+                        <h1 className="page-title">Notificaciones</h1>
+                        <p className="page-subtitle">Alertas de seguridad y notificaciones del sistema</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="container">
+                  <div className="notifications-content">
+                    {/* TODO: Agregar componente NotificationsPage aquí */}
+                    <div className="placeholder-content">
+                      <p>Página de notificaciones en construcción...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            } 
           />
           
           {/* Ruta de fallback */}
@@ -360,7 +394,7 @@ function App() {
           />
         </Routes>
       </div>
-    </>
+    </NotificationProvider>
   );
 }
 
