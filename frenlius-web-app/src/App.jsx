@@ -11,6 +11,7 @@ import FlightSelection from "./components/FlightSelection";
 import ImageUpload from './components/ImageUpload';
 import FlightViewer from './components/FlightViewer';
 import LiveStreamPage from './pages/LiveStreamPage';
+import CreateRouteModal from './components/CreateRouteModal';
 
 // Auth Components
 import Login from './components/Auth/Login';
@@ -234,7 +235,7 @@ function App() {
                             <div className="action-icon" style={{background: 'linear-gradient(135deg, #10b981, #059669)'}}>
                               <i className="fas fa-chart-line"></i>
                             </div>
-                            <h4>Próximamente</h4>
+                            <h4>Coming Soon</h4>
                             <p>Nuevas características en desarrollo</p>
                             <button className="btn btn-secondary btn-modern" disabled>
                               Pronto <i className="fas fa-clock ms-1"></i>

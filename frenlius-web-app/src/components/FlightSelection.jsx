@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { apiGet } from "../services/apiClient";
+import CreateRouteModal from "./CreateRouteModal";
 
 const FlightSelection = ({ onRouteSelect }) => {
     const [routes, setRoutes] = useState([]);
@@ -11,36 +12,40 @@ const FlightSelection = ({ onRouteSelect }) => {
     const [flightName, setFlightName] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [isBuilding, setIsBuilding] = useState(false);
+    
+    // Estados para el modal de crear ruta
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [creatingRoute, setCreatingRoute] = useState(false);
 
     useEffect(() => {
-        const fetchRoutes = async () => {
-            try {
-                setLoading(true);
-                            
-                const response = await apiGet("https://9qqsfb1gy1.execute-api.us-east-2.amazonaws.com/prod/list-routes");
-                
-                const data = response.data.routes;
-                setRoutes(data);
-                setError("");
-                //console.log('Rutas obtenidas exitosamente:', data);
-            } catch (error) {
-                console.error("Error al obtener rutas:", error);
-                
-                // Manejar errores específicos de autorización
-                if (error.response?.status === 401 || error.authExpired) {
-                    setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
-                } else if (error.response?.status === 403) {
-                    setError("No tienes permisos para acceder a las rutas.");
-                } else {
-                    setError("No se pudieron cargar las rutas de vuelo. Por favor, inténtalo de nuevo.");
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchRoutes();
     }, []);
+
+    const fetchRoutes = async () => {
+        try {
+            setLoading(true);
+            setError("");
+                        
+            const response = await apiGet("https://9qqsfb1gy1.execute-api.us-east-2.amazonaws.com/prod/list-routes");
+            
+            const data = response.data.routes;
+            setRoutes(data);
+            console.log('Rutas obtenidas exitosamente:', data);
+        } catch (error) {
+            console.error("Error al obtener rutas:", error);
+            
+            // Manejar errores específicos de autorización
+            if (error.response?.status === 401 || error.authExpired) {
+                setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+            } else if (error.response?.status === 403) {
+                setError("No tienes permisos para acceder a las rutas.");
+            } else {
+                setError("No se pudieron cargar las rutas de vuelo. Por favor, inténtalo de nuevo.");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSelect = (event) => {
         const route = event.target.value;
@@ -140,6 +145,38 @@ const FlightSelection = ({ onRouteSelect }) => {
         }
     };
 
+    // ====== NUEVAS FUNCIONES PARA MANEJAR CREACIÓN DE RUTAS ======
+
+    const handleCreateRouteClick = () => {
+        setShowCreateModal(true);
+    };
+
+    const handleCloseCreateModal = () => {
+        setShowCreateModal(false);
+    };
+
+    const handleRouteCreated = (createdRouteData) => {
+        console.log('Nueva ruta creada:', createdRouteData);
+        
+        // Actualizar la lista de rutas con la nueva lista del servidor
+        if (createdRouteData.allRoutes) {
+            setRoutes(createdRouteData.allRoutes);
+        }
+        
+        // Seleccionar automáticamente la nueva ruta
+        setSelectedRoute(createdRouteData.newRoute);
+        
+        // Mostrar mensaje de éxito
+        setError("");
+        
+        // Opcional: podrías mostrar una notificación de éxito
+        // showSuccessNotification(`Ruta "${createdRouteData.newRoute}" creada exitosamente`);
+        
+        console.log(`Ruta "${createdRouteData.newRoute}" creada y seleccionada automáticamente`);
+    };
+
+    // ====== FIN DE NUEVAS FUNCIONES ======
+
     if (loading) {
         return (
             <div className="flight-selection-container">
@@ -208,23 +245,47 @@ const FlightSelection = ({ onRouteSelect }) => {
                             <i className="fas fa-map-marked-alt me-2"></i>
                             Ruta de vuelo
                         </label>
-                        <div className="select-wrapper">
-                            <select
-                                className="form-select modern-select"
-                                value={selectedRoute}
-                                onChange={handleSelect}
-                            >
-                                <option value="">Selecciona una ruta...</option>
-                                {routes.map((route) => (
-                                    <option key={route} value={route}>
-                                        {route}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="select-icon">
-                                <i className="fas fa-chevron-down"></i>
+
+                        {/* ====== NUEVA SECCIÓN: BOTÓN + DROPDOWN ====== */}
+                        <div className="route-selection-wrapper">
+                            {/* Info sobre crear nueva ruta */}
+                            <div className="create-route-info">
+                                <div className="info-content">
+                                    <i className="fas fa-lightbulb me-2"></i>
+                                    <span>¿No encuentras tu ruta?</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-primary btn-create-route"
+                                    onClick={handleCreateRouteClick}
+                                    disabled={loading || creatingRoute}
+                                >
+                                    <i className="fas fa-plus me-2"></i>
+                                    Crear Nueva Ruta
+                                </button>
+                            </div>
+
+                            {/* Dropdown de selección */}
+                            <div className="select-wrapper">
+                                <select
+                                    className="form-select modern-select"
+                                    value={selectedRoute}
+                                    onChange={handleSelect}
+                                    disabled={creatingRoute}
+                                >
+                                    <option value="">Selecciona una ruta existente...</option>
+                                    {routes.map((route) => (
+                                        <option key={route} value={route}>
+                                            {route}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="select-icon">
+                                    <i className="fas fa-chevron-down"></i>
+                                </div>
                             </div>
                         </div>
+                        {/* ====== FIN DE NUEVA SECCIÓN ====== */}
                     </div>
 
                     {/* Time Selection */}
@@ -371,6 +432,14 @@ const FlightSelection = ({ onRouteSelect }) => {
                     )}
                 </div>
             </div>
+
+            {/* ====== MODAL DE CREAR RUTA ====== */}
+            <CreateRouteModal
+                isOpen={showCreateModal}
+                onClose={handleCloseCreateModal}
+                onRouteCreated={handleRouteCreated}
+                existingRoutes={routes}
+            />
         </div>
     );
 };

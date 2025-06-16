@@ -74,7 +74,7 @@ apiClient.interceptors.response.use(
     
     // Para otros errores, solo loggear
     if (error.response) {
-      console.error(`❌ Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`);
+      //|console.error(`❌ Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`);
     } else if (error.request) {
       console.error('❌ Error de red: No response recibida');
     } else {
