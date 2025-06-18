@@ -11,7 +11,7 @@ import FlightSelection from "./components/FlightSelection";
 import ImageUpload from './components/ImageUpload';
 import FlightViewer from './components/FlightViewer';
 import LiveStreamPage from './pages/LiveStreamPage';
-import CreateRouteModal from './components/CreateRouteModal';
+import NotificationsPage from './components/NotificationsPage';
 
 // Auth Components
 import Login from './components/Auth/Login';
@@ -249,7 +249,7 @@ function App() {
                     </div>
 
                     {/* User Info Section */}
-                    <div className="user-info-section">
+                    {/* <div className="user-info-section">
                       <div className="user-stats">
                         <div className="stat-item">
                           <div className="stat-icon">
@@ -272,7 +272,7 @@ function App() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
@@ -361,10 +361,7 @@ function App() {
                 
                 <div className="container">
                   <div className="notifications-content">
-                    {/* TODO: Agregar componente NotificationsPage aquí */}
-                    <div className="placeholder-content">
-                      <p>Página de notificaciones en construcción...</p>
-                    </div>
+                    <NotificationsPage />
                   </div>
                 </div>
               </div>

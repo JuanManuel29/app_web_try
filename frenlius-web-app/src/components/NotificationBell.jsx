@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
 import { formatNotificationDate, getNotificationSummary } from '../services/notificationService';
 
@@ -9,6 +9,7 @@ const NotificationBell = () => {
   const dropdownRef = useRef(null);
   const bellRef = useRef(null);
   const lastUnreadCount = useRef(0);
+  const navigate = useNavigate(); // Para navegación
 
   const {
     unreadCount,
@@ -61,7 +62,7 @@ const NotificationBell = () => {
     setHasNewAnimation(false); // Quitar animación al abrir
   };
 
-  // Manejar click en notificación
+  // Manejar click en notificación - CORREGIDO CON NAVEGACIÓN
   const handleNotificationClick = async (notification) => {
     try {
       // Marcar como leída si no lo está
@@ -72,8 +73,8 @@ const NotificationBell = () => {
       // Cerrar dropdown
       setDropdownOpen(false);
       
-      // Navegar a la página de notificaciones con esta notificación seleccionada
-      // Esto se puede implementar después con query params o estado
+      // Navegar a la página de notificaciones
+      navigate('/notifications');
       
     } catch (error) {
       console.error('Error al marcar notificación como leída:', error);
@@ -108,16 +109,9 @@ const NotificationBell = () => {
         <div className="bell-icon-wrapper">
           <i className="fas fa-bell bell-icon"></i>
           
-          {/* Badge con contador */}
+          {/* Badge simple: solo circulito rojo si hay notificaciones */}
           {unreadCount > 0 && (
-            <span className="notification-badge">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-          
-          {/* Indicador de nueva notificación */}
-          {hasNewAnimation && (
-            <div className="new-notification-pulse"></div>
+            <span className="notification-badge"></span>
           )}
         </div>
       </button>

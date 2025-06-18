@@ -263,7 +263,7 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
                   Estado
                 </div>
                 <div className="metadata-value">
-                  {notification.status === 'UNREAD' ? 'Sin leer' : `Leída el ${formatNotificationDate(notification.read_at)}`}
+                  {notification.status === 'UNREAD' ? 'Sin leer' : `Leída ${formatNotificationDate(notification.read_at)}`}
                 </div>
               </div>
             </div>
@@ -311,12 +311,12 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
                 <div className="comments-input">
                   <label className="form-label">
                     <i className="fas fa-edit me-2"></i>
-                    Comentarios (opcional)
+                    Comentarios
                   </label>
                   <textarea
                     className="form-control"
                     rows="4"
-                    placeholder="Ej: Estas son personas autorizadas con uniformes de la empresa..."
+                    placeholder=""
                     value={feedbackData.comments}
                     onChange={(e) => setFeedbackData(prev => ({ ...prev, comments: e.target.value }))}
                     disabled={submittingFeedback}
@@ -359,10 +359,10 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
                   </div>
                   <div className="result-content">
                     <h5>Feedback enviado</h5>
-                    <p>
+                    {/* <p>
                       Marcaste esta notificación como{' '}
                       <strong>{feedbackData.isUseful ? 'útil' : 'falso positivo'}</strong>
-                    </p>
+                    </p> */}
                     {feedbackData.comments && (
                       <div className="feedback-comments-display">
                         <strong>Tus comentarios:</strong>
@@ -371,9 +371,9 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
                     )}
                   </div>
                 </div>
-                <p className="feedback-thanks">
+                {/* <p className="feedback-thanks">
                   ¡Gracias por tu feedback! Esto nos ayuda a mejorar nuestro sistema de detección.
-                </p>
+                </p> */}
               </div>
             )}
           </div>

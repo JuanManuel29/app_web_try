@@ -27,20 +27,52 @@ class NotificationService {
       const queryString = params.toString();
       const url = `${NOTIFICATIONS_BASE_URL}/notifications${queryString ? `?${queryString}` : ''}`;
       
-      console.log('🔔 Fetching notifications:', url);
+      // console.log('🔔 Fetching notifications:', url);
       
       const response = await apiGet(url);
       
-      return {
+      // Manejar respuesta exitosa (incluso si está vacía)
+      const result = {
         notifications: response.data.notifications || [],
         count: response.data.count || 0,
         nextKey: response.data.next_key,
         hasMore: response.data.has_more || false
       };
       
+      // console.log(`✅ Successfully fetched ${result.count} notifications`);
+      
+      return result;
+      
     } catch (error) {
       console.error('❌ Error fetching notifications:', error);
-      throw new Error('No se pudieron cargar las notificaciones');
+      
+      // Verificar si es un error de red vs error del servidor
+      if (error.response) {
+        // Error del servidor
+        const status = error.response.status;
+        const message = error.response.data?.error || 'Error del servidor';
+        
+        if (status === 404) {
+          // No encontrado - retornar estructura vacía
+          console.log('📭 No notifications found, returning empty result');
+          return {
+            notifications: [],
+            count: 0,
+            nextKey: null,
+            hasMore: false
+          };
+        } else if (status === 401) {
+          throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        } else {
+          throw new Error(`Error del servidor: ${message}`);
+        }
+      } else if (error.request) {
+        // Error de red
+        throw new Error('Error de conexión. Verifica tu conexión a internet.');
+      } else {
+        // Error desconocido
+        throw new Error('Error inesperado al cargar notificaciones.');
+      }
     }
   }
 
@@ -74,7 +106,14 @@ class NotificationService {
       
     } catch (error) {
       console.error('❌ Error marking notification as read:', error);
-      throw new Error('No se pudo marcar la notificación como leída');
+      
+      if (error.response?.status === 404) {
+        throw new Error('Notificación no encontrada');
+      } else if (error.response?.status === 401) {
+        throw new Error('No autorizado para marcar esta notificación');
+      } else {
+        throw new Error('No se pudo marcar la notificación como leída');
+      }
     }
   }
 
@@ -106,7 +145,7 @@ class NotificationService {
    */
   async addFeedback(notificationId, isUseful, comments = '') {
     try {
-      console.log('💬 Adding feedback to notification:', notificationId, { isUseful, comments });
+      //console.log('💬 Adding feedback to notification:', notificationId, { isUseful, comments });
       
       const response = await apiPost(
         `${NOTIFICATIONS_BASE_URL}/notifications/${notificationId}/feedback`,
@@ -120,7 +159,14 @@ class NotificationService {
       
     } catch (error) {
       console.error('❌ Error adding feedback:', error);
-      throw new Error('No se pudo enviar el feedback');
+      
+      if (error.response?.status === 404) {
+        throw new Error('Notificación no encontrada');
+      } else if (error.response?.status === 400) {
+        throw new Error('Datos de feedback inválidos');
+      } else {
+        throw new Error('No se pudo enviar el feedback');
+      }
     }
   }
 
@@ -130,15 +176,32 @@ class NotificationService {
    */
   async getStats() {
     try {
-      console.log('📊 Fetching notification stats');
+      //console.log('📊 Fetching notification stats');
       
       const response = await apiGet(`${NOTIFICATIONS_BASE_URL}/notifications/stats`);
       
       return response.data;
       
     } catch (error) {
-      console.error('❌ Error fetching notification stats:', error);
-      throw new Error('No se pudieron cargar las estadísticas');
+      //console.error('❌ Error fetching notification stats:', error);
+      
+      if (error.response?.status === 404) {
+        // Sin estadísticas disponibles
+        return {
+          total_notifications: 0,
+          unread_count: 0,
+          read_count: 0,
+          recent_7_days: 0,
+          feedback_stats: {
+            total_with_feedback: 0,
+            useful: 0,
+            not_useful: 0,
+            pending_feedback: 0
+          }
+        };
+      } else {
+        throw new Error('No se pudieron cargar las estadísticas');
+      }
     }
   }
 
@@ -158,8 +221,13 @@ class NotificationService {
       return response.data.image_url;
       
     } catch (error) {
-      console.error('❌ Error fetching image URL:', error);
-      throw new Error('No se pudo cargar la imagen');
+      // console.error('❌ Error fetching image URL:', error);
+      
+      if (error.response?.status === 404) {
+        throw new Error('Imagen no encontrada');
+      } else {
+        throw new Error('No se pudo cargar la imagen');
+      }
     }
   }
 
@@ -177,7 +245,7 @@ class NotificationService {
         return { hasNew: false, newCount: 0, notifications: [] };
       }
       
-      // Si no tenemos referencia previa, todas son "nuevas"
+      // Si no tenemos referencia previa, todas las no leídas son "nuevas"
       if (!lastNotificationId) {
         const unreadCount = result.notifications.filter(n => n.status === 'UNREAD').length;
         return { 
@@ -213,7 +281,8 @@ class NotificationService {
       };
       
     } catch (error) {
-      console.error('❌ Error checking for new notifications:', error);
+      //console.error('❌ Error checking for new notifications:', error);
+      // En caso de error, retornar estado seguro
       return { hasNew: false, newCount: 0, notifications: [] };
     }
   }
@@ -231,6 +300,8 @@ export const notificationService = new NotificationService();
  */
 export const formatNotificationDate = (dateString) => {
   try {
+    if (!dateString) return 'Fecha no disponible';
+    
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -238,10 +309,10 @@ export const formatNotificationDate = (dateString) => {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
-    if (diffMins < 1) return 'Hace un momento';
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours}h`;
-    if (diffDays < 7) return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+    if (diffMins < 1) return 'hace un momento';
+    if (diffMins < 60) return `hace ${diffMins} min`;
+    if (diffHours < 24) return `hace ${diffHours}h`;
+    if (diffDays < 7) return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
     
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
@@ -249,6 +320,7 @@ export const formatNotificationDate = (dateString) => {
       year: 'numeric'
     });
   } catch (error) {
+    console.error('Error formatting date:', error);
     return 'Fecha inválida';
   }
 };
@@ -259,10 +331,13 @@ export const formatNotificationDate = (dateString) => {
  * @returns {string} Resumen corto
  */
 export const getNotificationSummary = (notification) => {
+  if (!notification) return 'Notificación sin datos';
+  
   const flightName = notification.flight_name || 'Vuelo desconocido';
   const imageName = notification.image_name || 'imagen';
   
-  return `Alerta de seguridad en ${imageName} del vuelo ${flightName}`;
+  //return `Alerta de seguridad en ${imageName} del vuelo ${flightName}`;
+  return `${flightName}/${imageName}`;
 };
 
 /**
@@ -272,11 +347,62 @@ export const getNotificationSummary = (notification) => {
  */
 export const getNotificationIcon = (notification) => {
   // Por ahora solo tenemos alertas de seguridad, pero esto se puede expandir
-  return {
-    icon: 'fa-shield-alt',
-    color: 'danger',
-    bgColor: 'rgba(239, 68, 68, 0.1)'
-  };
+  if (!notification) {
+    return {
+      icon: 'fa-bell',
+      color: 'secondary',
+      bgColor: 'rgba(108, 117, 125, 0.1)'
+    };
+  }
+  
+  // Determinar prioridad basada en el contenido
+  const alertReason = (notification.alert_reason || '').toLowerCase();
+  
+  if (alertReason.includes('arma') || alertReason.includes('weapon')) {
+    return {
+      icon: 'fa-exclamation-triangle',
+      color: 'danger',
+      bgColor: 'rgba(220, 53, 69, 0.1)'
+    };
+  } else if (alertReason.includes('sospechoso') || alertReason.includes('suspicious')) {
+    return {
+      icon: 'fa-eye',
+      color: 'warning',
+      bgColor: 'rgba(255, 193, 7, 0.1)'
+    };
+  } else {
+    return {
+      icon: 'fa-shield-alt',
+      color: 'primary',
+      bgColor: 'rgba(13, 110, 253, 0.1)'
+    };
+  }
+};
+
+/**
+ * Validar estructura de notificación
+ * @param {Object} notification - Objeto de notificación
+ * @returns {boolean} True si la notificación es válida
+ */
+export const isValidNotification = (notification) => {
+  return (
+    notification &&
+    typeof notification === 'object' &&
+    notification.notification_id &&
+    notification.client &&
+    notification.created_at
+  );
+};
+
+/**
+ * Filtrar notificaciones válidas de una lista
+ * @param {Array} notifications - Lista de notificaciones
+ * @returns {Array} Lista filtrada de notificaciones válidas
+ */
+export const filterValidNotifications = (notifications) => {
+  if (!Array.isArray(notifications)) return [];
+  
+  return notifications.filter(isValidNotification);
 };
 
 export default notificationService;
