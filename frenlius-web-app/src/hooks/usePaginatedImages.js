@@ -75,7 +75,7 @@ const usePaginatedImages = (flightName, pageSize = 9) => {
         `https://fcjh115tmc.execute-api.us-east-2.amazonaws.com/prod/list-images/${flightName}?page=1&limit=${pageSize}`
       );
 
-      console.log('🔍 Respuesta de API (página 1):', response);
+      //console.log('🔍 Respuesta de API (página 1):', response);
 
       // Manejar estructura de respuesta
       let apiData;
@@ -118,7 +118,7 @@ const usePaginatedImages = (flightName, pageSize = 9) => {
       });
 
     } catch (err) {
-      console.error('❌ Error cargando imágenes iniciales:', err);
+      //console.error('❌ Error cargando imágenes iniciales:', err);
       handleApiError(err);
     } finally {
       setLoading(false);
@@ -130,7 +130,7 @@ const usePaginatedImages = (flightName, pageSize = 9) => {
     if (!flightName || loading || !hasMore) return;
 
     const nextPage = currentPage.current + 1;
-    console.log('📸 Cargando más imágenes, página:', nextPage);
+    //console.log('📸 Cargando más imágenes, página:', nextPage);
 
     setLoading(true);
     setError('');
@@ -227,7 +227,7 @@ const usePaginatedImages = (flightName, pageSize = 9) => {
   // Limpiar caché cuando sea necesario (opcional)
   const clearCache = useCallback(() => {
     cache.current.clear();
-    console.log('🗑️ Caché de imágenes limpiado');
+    //console.log('🗑️ Caché de imágenes limpiado');
   }, []);
 
   // Información del caché para debugging

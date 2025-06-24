@@ -37,7 +37,7 @@ const NotificationsPage = () => {
       case 'unread':
         return notification.status === 'UNREAD';
       case 'read':
-        return notification.status === 'read';
+        return notification.status === 'READ';
       default:
         return true;
     }

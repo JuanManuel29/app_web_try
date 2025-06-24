@@ -12,6 +12,7 @@ import ImageUpload from './components/ImageUpload';
 import FlightViewer from './components/FlightViewer';
 import LiveStreamPage from './pages/LiveStreamPage';
 import NotificationsPage from './components/NotificationsPage';
+import SessionTimeoutModal from './components/SessionTimeoutModal';
 
 // Auth Components
 import Login from './components/Auth/Login';
@@ -20,6 +21,16 @@ import NewPasswordRequired from './components/Auth/NewPasswordRequired';
 
 // Notification Context
 import { NotificationProvider } from './contexts/NotificationContext';
+
+// Hooks
+import { useSessionTimeout } from './hooks/useSessionTimeout';
+
+// Auth Utils
+import { 
+  setSessionStartTime, 
+  clearSessionData, 
+  isSessionExpired 
+} from './utils/authUtils';
 
 // Configure Amplify
 Amplify.configure(awsConfig);
@@ -32,11 +43,73 @@ function App() {
   const [newPasswordData, setNewPasswordData] = useState({ username: '', signInStep: null }); // Para cambio de contraseña obligatorio
   const navigate = useNavigate();
 
+  // Session timeout hook
+  const {
+    isSessionActive,
+    isWarningShown,
+    timeRemaining,
+    setSessionStartTime: startSessionTimer,
+    clearSession: clearSessionTimer,
+    extendSession,
+    endSession,
+    formatTimeRemaining,
+  } = useSessionTimeout(
+    // onSessionExpired
+    () => {
+      console.log('🔒 Sesión expirada automáticamente');
+      handleSessionExpired();
+    },
+    // onWarning
+    (remaining) => {
+      console.log('⚠️ Advertencia: sesión expirará en', formatTimeRemaining(remaining));
+    }
+  );
+
+  // Manejar expiración de sesión
+  const handleSessionExpired = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      setAuthView('login');
+      clearSessionData();
+      clearSessionTimer();
+      
+      console.log('Sesión cerrada por inactividad');
+      
+    } catch (error) {
+      console.error('Error cerrando sesión expirada:', error);
+      // Forzar limpieza aunque haya error
+      setUser(null);
+      setAuthView('login');
+      clearSessionData();
+      clearSessionTimer();
+    }
+  };
+
+  // Manejar extensión de sesión
+  const handleExtendSession = () => {
+    console.log('🔄 Usuario extendió la sesión');
+    extendSession();
+  };
+
+  // Manejar logout desde modal
+  const handleLogoutFromModal = () => {
+    console.log('👋 Usuario cerró sesión desde modal');
+    endSession();
+  };
+
   useEffect(() => {
     // Check authentication status
     const checkAuth = async () => {
       try {
         const currentUser = await getCurrentUser();
+        
+        // Verificar si la sesión ha expirado
+        if (isSessionExpired()) {
+          console.log('🔒 Sesión expirada detectada en verificación inicial');
+          await handleSessionExpired();
+          return;
+        }
         
         // También obtener y almacenar el access token si no existe
         try {
@@ -52,12 +125,20 @@ function App() {
         }
         
         setUser(currentUser);
+        
+        // Iniciar timer de sesión si no existe
+        if (!sessionStorage.getItem('sessionStartTime')) {
+          setSessionStartTime();
+          startSessionTimer();
+        }
+        
         //console.log('Usuario autenticado:', currentUser);
       } catch (err) {
-        console.log('Usuario no autenticado:', err);
+        //console.log('Usuario no autenticado:', err);
         setUser(null);
         // Limpiar token si no hay usuario autenticado
-        sessionStorage.removeItem('accessToken');
+        clearSessionData();
+        clearSessionTimer();
       } finally {
         setAuthChecked(true);
       }
@@ -67,7 +148,7 @@ function App() {
 
     // Listen for auth events
     const hubListener = Hub.listen('auth', ({ payload }) => {
-      console.log('Auth event:', payload.event);
+      //console.log('Auth event:', payload.event);
       switch (payload.event) {
         case 'signedIn':
           getCurrentUser()
@@ -75,6 +156,11 @@ function App() {
               console.log('Usuario logueado:', user);
               setUser(user);
               setAuthView('login'); // Reset auth view
+              
+              // Establecer timestamp de sesión
+              setSessionStartTime();
+              startSessionTimer();
+              
               navigate('/');
             })
             .catch(err => console.log('Error obteniendo usuario:', err));
@@ -83,22 +169,30 @@ function App() {
           console.log('Usuario deslogueado');
           setUser(null);
           setAuthView('login'); // Reset to login view
+          
+          // Limpiar datos de sesión
+          clearSessionData();
+          clearSessionTimer();
+          
           navigate('/');
           break;
       }
     });
 
     return () => hubListener(); // Cleanup
-  }, [navigate]);
+  }, [navigate, startSessionTimer, clearSessionTimer]);
 
   const handleSignOut = async () => {
     try {
       await signOut();
       setUser(null);
       setAuthView('login');
-      // Limpiar access token al cerrar sesión
-      sessionStorage.removeItem('accessToken');
-      console.log('Sign out exitoso y token eliminado');
+      
+      // Limpiar datos de sesión
+      clearSessionData();
+      clearSessionTimer();
+      
+      console.log('Sign out exitoso y datos de sesión eliminados');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -175,6 +269,16 @@ function App() {
   return (
     <NotificationProvider>
       <Navbar user={user} signOut={handleSignOut} />
+      
+      {/* Modal de timeout de sesión */}
+      <SessionTimeoutModal
+        show={isWarningShown}
+        timeRemaining={timeRemaining}
+        onExtend={handleExtendSession}
+        onLogout={handleLogoutFromModal}
+        formatTime={formatTimeRemaining}
+      />
+      
       <div className="main-content">
         <Routes>
           <Route 
@@ -191,59 +295,66 @@ function App() {
                         ¡Bienvenido de vuelta, <span className="gradient-text">{user.username}</span>!
                       </h1>
                       <p className="welcome-subtitle">
-                        Gestiona tus imágenes de vuelo y accede a contenido en vivo
+                        Gestiona tus vuelos y visualiza datos en tiempo real
                       </p>
                     </div>
-                    
-                    <div className="quick-actions">
+                    <div className="welcome-features">
                       <div className="row g-4">
                         <div className="col-lg-3 col-md-6">
-                          <div className="action-card">
-                            <div className="action-icon">
-                              <i className="fas fa-cloud-upload-alt"></i>
+                          <Link to="/upload" className="text-decoration-none">
+                            <div className="action-card h-100">
+                              <div className="action-icon">
+                                <i className="fas fa-cloud-upload-alt"></i>
+                              </div>
+                              <h4>Subir Imágenes</h4>
+                              <p>Selecciona una ruta y carga tus imágenes de vuelo</p>
+                              <div className="action-arrow">
+                                <i className="fas fa-arrow-right"></i>
+                              </div>
                             </div>
-                            <h4>Subir Imágenes</h4>
-                            <p>Carga tus nuevas imágenes de vuelo</p>
-                            <Link to="/upload" className="btn btn-primary btn-modern">
-                              Subir imagen <i className="fas fa-arrow-right ms-1"></i>
-                            </Link>
-                          </div>
+                          </Link>
                         </div>
                         <div className="col-lg-3 col-md-6">
-                          <div className="action-card">
-                            <div className="action-icon secondary">
-                              <i className="fas fa-images"></i>
+                          <Link to="/flights" className="text-decoration-none">
+                            <div className="action-card h-100">
+                              <div className="action-icon secondary">
+                                <i className="fas fa-images"></i>
+                              </div>
+                              <h4>Mis Vuelos</h4>
+                              <p>Explora y visualiza las imágenes de tus vuelos</p>
+                              <div className="action-arrow">
+                                <i className="fas fa-arrow-right"></i>
+                              </div>
                             </div>
-                            <h4>Mis Vuelos</h4>
-                            <p>Visualiza y gestiona tus vuelos almacenados</p>
-                            <Link to="/flights" className="btn btn-primary btn-modern">
-                              Ver Vuelos <i className="fas fa-arrow-right ms-1"></i>
-                            </Link>
-                          </div>
+                          </Link>
                         </div>
                         <div className="col-lg-3 col-md-6">
-                          <div className="action-card">
-                            <div className="action-icon" style={{background: 'linear-gradient(135deg, #ef4444, #dc2626)'}}>
-                              <i className="fas fa-broadcast-tower"></i>
+                          <Link to="/live" className="text-decoration-none">
+                            <div className="action-card h-100">
+                              <div className="action-icon">
+                                <i className="fas fa-broadcast-tower"></i>
+                              </div>
+                              <h4>Stream en Vivo</h4>
+                              <p>Monitoreo en tiempo real de vuelos</p>
+                              <div className="action-arrow">
+                                <i className="fas fa-arrow-right"></i>
+                              </div>
                             </div>
-                            <h4>Stream en Vivo</h4>
-                            <p>Accede a transmisiones en tiempo real</p>
-                            <Link to="/live" className="btn btn-primary btn-modern">
-                              Ver Stream <i className="fas fa-arrow-right ms-1"></i>
-                            </Link>
-                          </div>
+                          </Link>
                         </div>
                         <div className="col-lg-3 col-md-6">
-                          <div className="action-card">
-                            <div className="action-icon" style={{background: 'linear-gradient(135deg, #10b981, #059669)'}}>
-                              <i className="fas fa-chart-line"></i>
+                          <Link to="/notifications" className="text-decoration-none">
+                            <div className="action-card h-100">
+                              <div className="action-icon secondary">
+                                <i className="fas fa-bell"></i>
+                              </div>
+                              <h4>Alertas</h4>
+                              <p>Alertas de seguridad y notificaciones del sistema</p>
+                              <div className="action-arrow">
+                                <i className="fas fa-arrow-right"></i>
+                              </div>
                             </div>
-                            <h4>Coming Soon</h4>
-                            <p>Nuevas características en desarrollo</p>
-                            <button className="btn btn-secondary btn-modern" disabled>
-                              Pronto <i className="fas fa-clock ms-1"></i>
-                            </button>
-                          </div>
+                          </Link>
                         </div>
                       </div>
                     </div>
@@ -366,7 +477,7 @@ function App() {
                 </div>
               </div>
             } 
-          />
+          />  
           
           {/* Ruta de fallback */}
           <Route 

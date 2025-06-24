@@ -30,9 +30,9 @@ const FlightSelection = ({ onRouteSelect }) => {
             
             const data = response.data.routes;
             setRoutes(data);
-            console.log('Rutas obtenidas exitosamente:', data);
+            //console.log('Rutas obtenidas exitosamente:', data);
         } catch (error) {
-            console.error("Error al obtener rutas:", error);
+            //console.error("Error al obtener rutas:", error);
             
             // Manejar errores específicos de autorización
             if (error.response?.status === 401 || error.authExpired) {

@@ -351,7 +351,7 @@ export function NotificationProvider({ children }) {
     
     // Configurar polling
     const pollInterval = setInterval(() => {
-      console.log('🔄 Checking for new notifications...');
+      //console.log('🔄 Checking for new notifications...');
       checkForNewNotifications();
     }, 20000); // 20 segundos
     

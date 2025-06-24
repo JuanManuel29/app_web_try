@@ -3,17 +3,16 @@ import { apiGet } from '../services/apiClient';
 import LazyImage from './LazyImage';
 import LoadMoreButton from './LoadMoreButton';
 import usePaginatedImages from '../hooks/usePaginatedImages';
+import usePaginatedFlights from '../hooks/usePaginatedFlights'; // NUEVO IMPORT
 
 const FlightViewer = () => {
   // Estados principales
   const [routes, setRoutes] = useState([]);
   const [selectedRoute, setSelectedRoute] = useState('');
-  const [flights, setFlights] = useState([]);
   const [selectedFlight, setSelectedFlight] = useState('');
   
   // Estados de carga
   const [loadingRoutes, setLoadingRoutes] = useState(true);
-  const [loadingFlights, setLoadingFlights] = useState(false);
   
   // Estados de error
   const [error, setError] = useState('');
@@ -22,7 +21,31 @@ const FlightViewer = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Hook personalizado para manejo de imágenes paginadas
+  // ESTADOS PARA FILTROS DE FECHA (SOLO LO MÍNIMO)
+  const [dateFilter, setDateFilter] = useState('');
+  const [dateFromFilter, setDateFromFilter] = useState('');
+  const [dateToFilter, setDateToFilter] = useState('');
+  const [filterMode, setFilterMode] = useState('single');
+  const [filtersApplied, setFiltersApplied] = useState(false);
+  const [filteredFlights, setFilteredFlights] = useState([]);
+
+  // NUEVO HOOK: Paginación de vuelos
+  const {
+    flights,
+    loading: loadingFlights,
+    error: flightsError,
+    hasMore: hasMoreFlights,
+    pagination: flightsPagination,
+    isInitialized: flightsInitialized,
+    remainingFlights,
+    loadMoreFlights,
+    applyFilters: applyFlightsFilters,
+    resetFilters: resetFlightsFilters,
+    totalFlights,
+    allFlightsLoaded
+  } = usePaginatedFlights(selectedRoute, 12); // 12 vuelos por página
+
+  // Hook personalizado para manejo de imágenes paginadas (ORIGINAL INTACTO)
   const {
     images,
     loading: loadingImages,
@@ -32,22 +55,22 @@ const FlightViewer = () => {
     loadMoreImages,
     pagination,
     isInitialized
-  } = usePaginatedImages(selectedFlight, 9); // 9 imágenes por página
+  } = usePaginatedImages(selectedFlight, 9);
 
   // Cargar rutas al montar el componente
   useEffect(() => {
     fetchRoutes();
   }, []);
 
-  // Cargar vuelos cuando se selecciona una ruta
+  // Limpiar filtros cuando cambien los vuelos
   useEffect(() => {
-    if (selectedRoute) {
-      fetchFlights(selectedRoute);
-      setSelectedFlight('');
+    if (allFlightsLoaded) {
+      setFiltersApplied(false);
+      setFilteredFlights([]);
     }
-  }, [selectedRoute]);
+  }, [allFlightsLoaded]);
 
-  // Obtener rutas disponibles
+  // Obtener rutas disponibles (ORIGINAL)
   const fetchRoutes = async () => {
     try {
       setLoadingRoutes(true);
@@ -57,11 +80,9 @@ const FlightViewer = () => {
       const data = response.data.routes;
       
       setRoutes(data);
-      //console.log('Rutas cargadas:', data);
     } catch (error) {
       console.error('Error cargando rutas:', error);
       
-      // Manejar errores específicos de autorización
       if (error.response?.status === 401 || error.authExpired) {
         setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
       } else if (error.response?.status === 403) {
@@ -74,131 +95,109 @@ const FlightViewer = () => {
     }
   };
 
-  // Obtener vuelos para una ruta específica
-  const fetchFlights = async (routeName) => {
-    try {
-      setLoadingFlights(true);
-      setError('');
-      
-      const response = await apiGet(`https://s6qtgo11jg.execute-api.us-east-2.amazonaws.com/prod/list-flights/${routeName}`);
-      
-      // Manejar la estructura de respuesta de API Gateway
-      let data;
-      if (response.data.body) {
-        // Si la respuesta viene con body como string (API Gateway)
-        data = JSON.parse(response.data.body);
-      } else {
-        // Si la respuesta viene directamente
-        data = response.data;
-      }
-      
-      // Extraer el array de vuelos
-      const flights = data.flights || data || [];
-      
-      // Verificar que sea un array
-      if (!Array.isArray(flights)) {
-        console.error('La respuesta no contiene un array de vuelos:', flights);
-        setError('Formato de respuesta inválido del servidor.');
-        setFlights([]);
-        return;
-      }
-      
-      // Ordenar vuelos por fecha (más recientes primero)
-      const sortedFlights = flights.sort((a, b) => {
-        // Extraer fecha y hora del nombre del vuelo: "Ruta1-AAAAMMDD-HHMM"
-        const dateA = extractDateFromFlightName(a);
-        const dateB = extractDateFromFlightName(b);
-        return dateB - dateA;
-      });
-      
-      setFlights(sortedFlights);
-      console.log('Vuelos cargados:', sortedFlights);
-    } catch (error) {
-      console.error('Error cargando vuelos:', error);
-      setError('No se pudieron cargar los vuelos para esta ruta.');
-      setFlights([]);
-    } finally {
-      setLoadingFlights(false);
-    }
+  // ELIMINADA: Ya no necesitamos fetchFlights, lo maneja el hook
+  // const fetchFlights = async (routeName) => { ... }
+
+  // ELIMINADA: Función auxiliar movida al hook
+  // const extractDateFromFlightName = (flightName) => { ... }
+
+  // NUEVA FUNCIÓN: Aplicar filtros manualmente usando el hook
+  const handleApplyFilters = () => {
+    const filtered = applyFlightsFilters(filterMode, dateFilter, dateFromFilter, dateToFilter);
+    setFilteredFlights(filtered);
+    setFiltersApplied(true);
   };
 
-  // Función auxiliar para extraer fecha del nombre del vuelo
-  const extractDateFromFlightName = (flightName) => {
+  // NUEVA FUNCIÓN: Limpiar filtros de fecha
+  const clearDateFilters = () => {
+    setDateFilter('');
+    setDateFromFilter('');
+    setDateToFilter('');
+    setFilterMode('single');
+    setFilteredFlights([]);
+    setFiltersApplied(false);
+    resetFlightsFilters(); // Usar función del hook
+  };
+
+  // NUEVA FUNCIÓN: Manejar cambio de modo de filtro
+  const handleFilterModeChange = (mode) => {
+    setFilterMode(mode);
+    setDateFilter('');
+    setDateFromFilter('');
+    setDateToFilter('');
+    setFilteredFlights([]);
+    setFiltersApplied(false);
+  };
+
+  // NUEVA FUNCIÓN: Verificar si hay filtros configurados
+  const hasFiltersConfigured = () => {
+    return (filterMode === 'single' && dateFilter) || 
+           (filterMode === 'range' && (dateFromFilter || dateToFilter));
+  };
+
+  // Formatear fecha para mostrar (mantener local para compatibilidad)
+  const formatFlightDate = (flightName) => {
     try {
-      // Formato: "Ruta-con-palabras-AAAAMMDD-HHMM"
-      // Necesitamos encontrar los últimos 2 segmentos que son fecha y hora
       const parts = flightName.split('-');
       
       if (parts.length >= 2) {
-        // Los últimos 2 elementos deben ser fecha (AAAAMMDD) y hora (HHMM)
-        const timeStr = parts[parts.length - 1]; // HHMM (último)
-        const dateStr = parts[parts.length - 2]; // AAAAMMDD (penúltimo)
+        const timeStr = parts[parts.length - 1];
+        const dateStr = parts[parts.length - 2];
         
-        // Verificar que el penúltimo elemento sea una fecha válida (8 dígitos)
-        // y el último sea una hora válida (4 dígitos)
         if (dateStr.length === 8 && /^\d{8}$/.test(dateStr) &&
             timeStr.length === 4 && /^\d{4}$/.test(timeStr)) {
           
           const year = parseInt(dateStr.substring(0, 4));
-          const month = parseInt(dateStr.substring(4, 6)) - 1; // Los meses en JS van de 0-11
+          const month = parseInt(dateStr.substring(4, 6)) - 1;
           const day = parseInt(dateStr.substring(6, 8));
           const hour = parseInt(timeStr.substring(0, 2));
           const minute = parseInt(timeStr.substring(2, 4));
           
-          return new Date(year, month, day, hour, minute);
+          const date = new Date(year, month, day, hour, minute);
+          
+          return date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
         }
       }
     } catch (error) {
-      console.error('Error parseando fecha del vuelo:', error);
+      console.error('Error formateando fecha del vuelo:', error);
     }
-    return new Date(0); // Fecha por defecto si hay error
+    return flightName;
   };
 
-  // Formatear fecha para mostrar
-  const formatFlightDate = (flightName) => {
-    const date = extractDateFromFlightName(flightName);
-    
-    // Si no se pudo extraer una fecha válida, mostrar el nombre completo
-    if (date.getTime() === 0) {
-      return flightName;
-    }
-    
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // Manejar selección de ruta
+  // Manejar selección de ruta (ORIGINAL)
   const handleRouteSelect = (event) => {
     setSelectedRoute(event.target.value);
     setError('');
   };
 
-  // Manejar selección de vuelo
+  // Manejar selección de vuelo (ORIGINAL)
   const handleFlightSelect = (flightName) => {
     setSelectedFlight(flightName);
     setError('');
   };
 
-  // Abrir lightbox
+  // Abrir lightbox (ORIGINAL)
   const openLightbox = (imageIndex) => {
     setCurrentImageIndex(imageIndex);
     setLightboxOpen(true);
   };
 
-  // Resetear selección
+  // Resetear selección (ORIGINAL con limpiar filtros)
   const resetSelection = () => {
     setSelectedRoute('');
     setSelectedFlight('');
     setFlights([]);
+    clearDateFilters();
     setError('');
   };
 
-  // Manejar navegación del lightbox con teclado
+  // Manejar navegación del lightbox con teclado (ORIGINAL)
   useEffect(() => {
     const handleKeyPress = (event) => {
       if (!lightboxOpen) return;
@@ -224,6 +223,12 @@ const FlightViewer = () => {
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [lightboxOpen, currentImageIndex, images.length]);
 
+  // Usar error combinado
+  const combinedError = error || flightsError;
+
+  // Determinar qué vuelos mostrar
+  const displayFlights = filtersApplied ? filteredFlights : flights;
+
   if (loadingRoutes) {
     return (
       <div className="flight-viewer-container">
@@ -246,7 +251,7 @@ const FlightViewer = () => {
 
   return (
     <div className="flight-viewer-container">
-      {/* Breadcrumb Navigation */}
+      {/* Breadcrumb Navigation (ORIGINAL) */}
       <div className="breadcrumb-section">
         <nav aria-label="breadcrumb">
           <ol className="breadcrumb modern-breadcrumb">
@@ -268,7 +273,7 @@ const FlightViewer = () => {
         </nav>
       </div>
 
-      {/* Header */}
+      {/* Header (ORIGINAL) */}
       <div className="flight-viewer-header">
         <div className="header-content">
           <div className="header-icon">
@@ -296,14 +301,14 @@ const FlightViewer = () => {
       </div>
 
       {/* Error Message */}
-      {(error || imagesError) && (
+      {(combinedError || imagesError) && (
         <div className="error-message mb-4">
           <i className="fas fa-exclamation-triangle me-2"></i>
-          {error || imagesError}
+          {combinedError || imagesError}
         </div>
       )}
 
-      {/* Route Selection */}
+      {/* Route Selection (ORIGINAL) */}
       {!selectedRoute && (
         <div className="route-selection-card">
           <div className="card-header">
@@ -344,28 +349,118 @@ const FlightViewer = () => {
         </div>
       )}
 
-      {/* Flight Selection */}
+      {/* Flight Selection CON FILTROS AGREGADOS */}
       {selectedRoute && !selectedFlight && (
         <div className="flights-section">
+          {/* MODIFICADO: Section header con filtros */}
           <div className="section-header">
             <h3>
               <i className="fas fa-plane me-2"></i>
               Vuelos Disponibles
             </h3>
+
+            {/* NUEVO: Filtros de fecha */}
+            {flightsInitialized && totalFlights > 0 && (
+              <div className="date-filters-section">
+                <div className="filter-mode-toggle">
+                  <button
+                    className={`btn btn-sm ${filterMode === 'single' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                    onClick={() => handleFilterModeChange('single')}
+                  >
+                    <i className="fas fa-calendar-day me-1"></i>
+                    Fecha específica
+                  </button>
+                  <button
+                    className={`btn btn-sm ${filterMode === 'range' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                    onClick={() => handleFilterModeChange('range')}
+                  >
+                    <i className="fas fa-calendar-week me-1"></i>
+                    Rango de fechas
+                  </button>
+                </div>
+
+                <div className="filter-inputs">
+                  {filterMode === 'single' ? (
+                    <div className="single-date-filter">
+                      <label className="filter-label">
+                        <i className="fas fa-calendar me-1"></i>
+                        Fecha:
+                      </label>
+                      <input
+                        type="date"
+                        className="form-control date-input"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="range-date-filter">
+                      <div className="date-range-input">
+                        <label className="filter-label">
+                          <i className="fas fa-calendar-plus me-1"></i>
+                          Desde:
+                        </label>
+                        <input
+                          type="date"
+                          className="form-control date-input"
+                          value={dateFromFilter}
+                          onChange={(e) => setDateFromFilter(e.target.value)}
+                        />
+                      </div>
+                      <div className="date-range-input">
+                        <label className="filter-label">
+                          <i className="fas fa-calendar-minus me-1"></i>
+                          Hasta:
+                        </label>
+                        <input
+                          type="date"
+                          className="form-control date-input"
+                          value={dateToFilter}
+                          onChange={(e) => setDateToFilter(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(dateFilter || dateFromFilter || dateToFilter) && (
+                    <button
+                      className="btn btn-outline-danger btn-sm clear-filters-btn"
+                      onClick={clearDateFilters}
+                      title="Limpiar filtros"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="flights-count">
-              {loadingFlights ? (
+              {loadingFlights && !flightsInitialized ? (
                 <div className="spinner-border spinner-border-sm" role="status">
                   <span className="visually-hidden">Cargando...</span>
                 </div>
+              ) : hasFiltersConfigured() ? (
+                <button
+                  className="btn btn-primary btn-sm search-btn"
+                  onClick={handleApplyFilters}
+                >
+                  <i className="fas fa-search me-1"></i>
+                  Buscar
+                </button>
               ) : (
                 <span className="count-badge">
-                  {flights.length} {flights.length === 1 ? 'vuelo' : 'vuelos'}
+                  {displayFlights.length} {displayFlights.length === 1 ? 'vuelo' : 'vuelos'}
+                  {filtersApplied && (
+                    <small className="filter-indicator">filtrados</small>
+                  )}
                 </span>
               )}
             </div>
           </div>
 
-          {loadingFlights ? (
+          {/* SISTEMA DE PAGINACIÓN CON FILTROS */}
+          {loadingFlights && !flightsInitialized ? (
             <div className="flights-loading">
               <div className="loading-spinner">
                 <div className="spinner-border text-primary" role="status">
@@ -374,57 +469,133 @@ const FlightViewer = () => {
               </div>
               <p className="loading-text">Cargando vuelos para {selectedRoute}...</p>
             </div>
-          ) : flights.length === 0 ? (
+          ) : displayFlights.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">
                 <i className="fas fa-plane-slash"></i>
               </div>
-              <h4>No hay vuelos disponibles</h4>
-              <p>No se encontraron vuelos para la ruta <strong>{selectedRoute}</strong></p>
+              {filtersApplied ? (
+                <>
+                  <h4>No hay vuelos en las fechas seleccionadas</h4>
+                  <p>No se encontraron vuelos para los filtros de fecha aplicados</p>
+                  <button
+                    onClick={clearDateFilters}
+                    className="btn btn-primary btn-modern me-2"
+                  >
+                    <i className="fas fa-filter me-2"></i>
+                    Limpiar filtros
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h4>No hay vuelos disponibles</h4>
+                  <p>No se encontraron vuelos para la ruta <strong>{selectedRoute}</strong></p>
+                </>
+              )}
               <button
                 onClick={() => setSelectedRoute('')}
-                className="btn btn-primary btn-modern"
+                className="btn btn-outline-secondary btn-modern"
               >
                 <i className="fas fa-arrow-left me-2"></i>
                 Seleccionar otra ruta
               </button>
             </div>
           ) : (
-            <div className="flights-grid">
-              {flights.map((flight, index) => (
-                <div
-                  key={flight}
-                  className="flight-card"
-                  onClick={() => handleFlightSelect(flight)}
-                >
-                  <div className="flight-card-header">
-                    <div className="flight-icon">
-                      <i className="fas fa-plane-departure"></i>
+            <>
+              {/* Grid de vuelos */}
+              <div className="flights-grid">
+                {displayFlights.map((flight, index) => (
+                  <div
+                    key={flight}
+                    className="flight-card"
+                    onClick={() => handleFlightSelect(flight)}
+                  >
+                    <div className="flight-card-header">
+                      <div className="flight-icon">
+                        <i className="fas fa-plane-departure"></i>
+                      </div>
+                      <div className="flight-date">
+                        {formatFlightDate(flight)}
+                      </div>
                     </div>
-                    <div className="flight-date">
-                      {formatFlightDate(flight)}
+                    
+                    <div className="flight-card-body">
+                      <h5 className="flight-name">{flight}</h5>
+                      <p className="flight-meta">
+                        <i className="fas fa-images me-1"></i>
+                        Haz clic para ver imágenes
+                      </p>
+                    </div>
+                    
+                    <div className="flight-card-arrow">
+                      <i className="fas fa-chevron-right"></i>
                     </div>
                   </div>
-                  
-                  <div className="flight-card-body">
-                    <h5 className="flight-name">{flight}</h5>
-                    <p className="flight-meta">
-                      <i className="fas fa-images me-1"></i>
-                      Haz clic para ver imágenes
-                    </p>
-                  </div>
-                  
-                  <div className="flight-card-arrow">
-                    <i className="fas fa-chevron-right"></i>
+                ))}
+              </div>
+
+              {/* Botón Cargar Más (solo si no hay filtros aplicados) */}
+              {!filtersApplied && hasMoreFlights && (
+                <div className="load-more-section">
+cle                  
+                  {/* Botón personalizado para vuelos */}
+                  <div className="flights-load-more">
+                    <button
+                      onClick={loadMoreFlights}
+                      disabled={loadingFlights}
+                      className="btn btn-load-more-flights"
+                    >
+                      {loadingFlights ? (
+                        <>
+                          <div className="spinner-border spinner-border-sm me-2" role="status">
+                            <span className="visually-hidden">Cargando...</span>
+                          </div>
+                          Cargando vuelos...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-plus me-2"></i>
+                          Cargar más vuelos ({remainingFlights} restantes)
+                        </>
+                      )}
+                    </button>
+                    
+                    <div className="flights-progress-info">
+                      <small>
+                        Mostrando {flights.length} de {flightsPagination.total_flights} vuelos
+                      </small>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {/* Mensaje si no hay más vuelos */}
+              {!filtersApplied && !hasMoreFlights && flightsInitialized && flights.length > 0 && (
+                <div className="pagination-info">
+                  <span className="info-text">
+                    <i className="fas fa-check-circle me-1"></i>
+                    ✅ Todos los vuelos cargados ({flights.length} total)
+                  </span>
+                </div>
+              )}
+
+              {/* Indicador de progreso */}
+              {flightsInitialized && (
+                <div className="pagination-info">
+                  <span className="info-text">
+                    <i className="fas fa-plane me-1"></i>
+                    Mostrando {displayFlights.length} 
+                    {!filtersApplied && hasMoreFlights && <> de {flightsPagination.total_flights}</>} vuelos
+                    {filtersApplied && <> filtrados</>}
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
-      {/* Image Gallery - SISTEMA HÍBRIDO CON PROGRESO INTEGRADO */}
+      {/* Image Gallery - ORIGINAL COMPLETO */}
       {selectedFlight && (
         <div className="images-section">
           <div className="section-header">
@@ -443,7 +614,6 @@ const FlightViewer = () => {
             </div>
           </div>
 
-          {/* Estado inicial de carga */}
           {!isInitialized && loadingImages ? (
             <div className="images-loading">
               <div className="loading-spinner">
@@ -463,13 +633,10 @@ const FlightViewer = () => {
             </div>
           ) : (
             <>
-              {/* Grid de imágenes */}
+              {/* Grid de imágenes ORIGINAL */}
               <div className="images-grid">
                 {images.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className="image-card"
-                  >
+                  <div key={image.id} className="image-card">
                     <LazyImage
                       src={image.thumbnail}
                       alt={image.alt}
@@ -486,7 +653,7 @@ const FlightViewer = () => {
                 ))}
               </div>
 
-              {/* NUEVO: LoadMoreButton integrado con progreso completo */}
+              {/* LoadMoreButton ORIGINAL */}
               <LoadMoreButton
                 onClick={loadMoreImages}
                 loading={loadingImages}
@@ -502,7 +669,7 @@ const FlightViewer = () => {
         </div>
       )}
 
-      {/* Enhanced Lightbox Modal - SIN CAMBIOS */}
+      {/* Lightbox ORIGINAL COMPLETO */}
       {lightboxOpen && images.length > 0 && (
         <div className="lightbox-overlay" onClick={() => setLightboxOpen(false)}>
           <div className="lightbox-container" onClick={(e) => e.stopPropagation()}>

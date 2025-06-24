@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { signIn, fetchAuthSession } from 'aws-amplify/auth';
 import AuthLayout from './AuthLayout';
+import { setSessionStartTime } from '../../utils/authUtils';
 
 const Login = ({ onSuccess, onSwitchToForgotPassword, onNewPasswordRequired }) => {
   const [formData, setFormData] = useState({
@@ -75,7 +76,7 @@ const Login = ({ onSuccess, onSwitchToForgotPassword, onNewPasswordRequired }) =
   // Manejar submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       setError('Por favor corrige los errores en el formulario');
       return;
@@ -100,12 +101,18 @@ const Login = ({ onSuccess, onSwitchToForgotPassword, onNewPasswordRequired }) =
             // Almacenar el token para uso en API calls
             sessionStorage.setItem('accessToken', accessToken);
             console.log('Access token almacenado exitosamente');
+            
+            // NUEVO: Establecer timestamp de inicio de sesión
+            setSessionStartTime();
+            console.log('🕒 Timestamp de sesión establecido en login exitoso');
           }
           
           onSuccess();
         } catch (tokenError) {
           console.error('Error obteniendo access token:', tokenError);
           // Continuar con el login aunque no se obtenga el token
+          // pero establecer timestamp de sesión de todas formas
+          setSessionStartTime();
           onSuccess();
         }
       } else {

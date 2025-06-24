@@ -8,7 +8,7 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [feedbackStep, setFeedbackStep] = useState('initial'); // 'initial', 'rating', 'comments', 'submitted'
+  const [feedbackStep, setFeedbackStep] = useState('initial'); // 'initial', 'comments', 'submitted'
   const [feedbackData, setFeedbackData] = useState({
     isUseful: null,
     comments: ''
@@ -51,7 +51,7 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
 
   // Inicializar estado del feedback
   const initializeFeedback = () => {
-    if (notification.feedback?.is_useful !== null) {
+    if (notification.feedback?.is_useful !== null && notification.feedback?.is_useful !== undefined) {
       setFeedbackStep('submitted');
       setFeedbackData({
         isUseful: notification.feedback.is_useful,
@@ -85,17 +85,12 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
-  // Manejar rating del feedback
+  // Manejar rating del feedback - MODIFICADO: SIEMPRE IR A COMENTARIOS
   const handleFeedbackRating = (isUseful) => {
     setFeedbackData(prev => ({ ...prev, isUseful }));
     
-    if (isUseful) {
-      // Si es útil, enviar directamente
-      submitFeedback(isUseful, '');
-    } else {
-      // Si no es útil, pedir comentarios
-      setFeedbackStep('comments');
-    }
+    // CAMBIO: Siempre ir al paso de comentarios, no importa la respuesta
+    setFeedbackStep('comments');
   };
 
   // Enviar feedback
@@ -142,19 +137,6 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
                 </p>
               </div>
             </div>
-            <div className="notification-status-header">
-              {notification.status === 'UNREAD' ? (
-                <span className="status-badge unread large">
-                  <i className="fas fa-circle"></i>
-                  Sin leer
-                </span>
-              ) : (
-                <span className="status-badge read large">
-                  <i className="fas fa-check"></i>
-                  Leída
-                </span>
-              )}
-            </div>
           </div>
           
           <button
@@ -179,35 +161,28 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
             <div className="image-container">
               {imageLoading ? (
                 <div className="image-loading">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Cargando imagen...</span>
+                  <div className="loading-spinner">
+                    <i className="fas fa-spinner fa-spin"></i>
                   </div>
                   <p>Cargando imagen...</p>
                 </div>
-              ) : imageError ? (
+              ) : imageError || !imageUrl ? (
                 <div className="image-error">
                   <div className="error-icon">
                     <i className="fas fa-exclamation-triangle"></i>
                   </div>
-                  <h5>Error al cargar imagen</h5>
-                  <p>No se pudo cargar la imagen de esta notificación</p>
-                  <button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={loadImage}
-                  >
-                    <i className="fas fa-refresh me-2"></i>
-                    Reintentar
-                  </button>
+                  <p>No se pudo cargar la imagen</p>
+                  <small>La imagen puede haber sido movida o eliminada</small>
                 </div>
               ) : (
                 <div className="image-display">
-                  <img
-                    src={imageUrl}
-                    alt={`Imagen de alerta - ${notification.image_name}`}
+                  <img 
+                    src={imageUrl} 
+                    alt="Imagen de la alerta de seguridad"
                     className="notification-image"
                     onError={() => setImageError(true)}
                   />
-                  <div className="image-caption">
+                  <div className="image-info">
                     <i className="fas fa-info-circle me-2"></i>
                     {notification.image_name} - {notification.flight_name}
                   </div>
@@ -299,39 +274,52 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
                     No, falso positivo
                   </button>
                 </div>
+                <p className="feedback-note">
+                  <i className="fas fa-info-circle me-1"></i>
+                  En el siguiente paso podrás agregar comentarios adicionales.
+                </p>
               </div>
             )}
 
             {feedbackStep === 'comments' && (
               <div className="feedback-comments">
                 <p className="feedback-explanation">
-                  Gracias por tu feedback. Por favor cuéntanos por qué consideras que esta alerta no fue útil. 
-                  Esto nos ayuda a mejorar nuestro sistema de detección.
+                  {feedbackData.isUseful 
+                    ? 'Gracias por tu feedback positivo. ¿Hay algo específico que te gustaría comentar sobre esta alerta?' 
+                    : 'Gracias por tu feedback. Por favor cuéntanos por qué consideras que esta alerta no fue útil.'
+                  } Esto nos ayuda a mejorar nuestro sistema de detección.
                 </p>
+                
                 <div className="comments-input">
-                  <label className="form-label">
+                  <label className="feedback-comments-label">
                     <i className="fas fa-edit me-2"></i>
-                    Comentarios
+                    Comentarios {feedbackData.isUseful ? '(Opcional)' : ''}
                   </label>
                   <textarea
-                    className="form-control"
+                    className="feedback-textarea"
                     rows="4"
-                    placeholder=""
+                    placeholder={
+                      feedbackData.isUseful 
+                        ? "Comparte cualquier observación adicional (opcional)..."
+                        : "Cuéntanos qué consideraste que no era correcto en esta alerta..."
+                    }
                     value={feedbackData.comments}
                     onChange={(e) => setFeedbackData(prev => ({ ...prev, comments: e.target.value }))}
                     disabled={submittingFeedback}
                   />
                 </div>
-                <div className="comments-actions">
+                
+                <div className="feedback-actions">
                   <button
-                    className="btn btn-outline-secondary"
+                    className="btn-cancel-feedback"
                     onClick={() => setFeedbackStep('initial')}
                     disabled={submittingFeedback}
                   >
-                    Cancelar
+                    <i className="fas fa-arrow-left me-1"></i>
+                    Volver
                   </button>
                   <button
-                    className="btn btn-primary"
+                    className="btn-submit-feedback"
                     onClick={handleCommentsSubmit}
                     disabled={submittingFeedback}
                   >
@@ -371,9 +359,10 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
                     )}
                   </div>
                 </div>
-                {/* <p className="feedback-thanks">
+                <div><br /></div>
+                <p className="feedback-thanks">
                   ¡Gracias por tu feedback! Esto nos ayuda a mejorar nuestro sistema de detección.
-                </p> */}
+                </p>
               </div>
             )}
           </div>
@@ -385,7 +374,7 @@ const NotificationModal = ({ notification, isOpen, onClose }) => {
             className="btn btn-outline-primary"
             onClick={onClose}
           >
-            <i className="fas fa-times me-2"></i>
+            <i className="fas fa-times me-1"></i>
             Cerrar
           </button>
         </div>

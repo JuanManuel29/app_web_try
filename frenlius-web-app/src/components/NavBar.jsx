@@ -63,8 +63,32 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
           </div>
         </Link>
         
+        {/* NUEVO: Sección de controles móviles - Campanita + Hamburguesa */}
+        <div className="mobile-controls d-lg-none">
+          {/* Campanita fuera del menú colapsable - Solo en móvil */}
+          {user && (
+            <div className="mobile-notification-bell">
+              <NotificationBell />
+            </div>
+          )}
+          
+          {/* Botón hamburguesa */}
+          <button
+            className={`navbar-toggler custom-toggler ${expanded ? 'active' : ''}`}
+            type="button"
+            onClick={toggleNavbar}
+            aria-expanded={expanded}
+            aria-label="Toggle navigation"
+          >
+            <div className="toggler-line"></div>
+            <div className="toggler-line"></div>
+            <div className="toggler-line"></div>
+          </button>
+        </div>
+
+        {/* Botón hamburguesa original para desktop (oculto) */}
         <button
-          className={`navbar-toggler custom-toggler ${expanded ? 'active' : ''}`}
+          className={`navbar-toggler custom-toggler d-none ${expanded ? 'active' : ''}`}
           type="button"
           onClick={toggleNavbar}
           aria-expanded={expanded}
@@ -129,8 +153,8 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
               </Link>
             </li>
 
-            {/* NUEVO: Notificaciones */}
-            <li className="nav-item">
+            {/* Notificaciones - Solo en el menú móvil */}
+            <li className="nav-item d-lg-none">
               <Link 
                 className={`nav-link custom-nav-link ${isActiveLink('/notifications') ? 'active' : ''}`}
                 to="/notifications" 
@@ -146,8 +170,10 @@ const Navbar = ({ user, signOut, handleSignIn }) => {
           <div className="d-flex align-items-center">
             {user ? (
               <div className="d-flex align-items-center gap-3">
-                {/* NUEVO: Campanita de notificaciones */}
-                <NotificationBell />
+                {/* Campanita de notificaciones - Solo en desktop */}
+                <div className="desktop-notification-bell d-none d-lg-block">
+                  <NotificationBell />
+                </div>
 
                 {/* User Info */}
                 <div className="user-info d-none d-md-flex align-items-center">

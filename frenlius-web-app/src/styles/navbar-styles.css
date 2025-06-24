@@ -65,6 +65,21 @@
   letter-spacing: -0.025em;
 }
 
+/* === CONTROLES MÓVILES === */
+.mobile-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  order: 3; /* Asegurar que aparezca después del brand */
+}
+
+.mobile-notification-bell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100; /* Por encima de otros elementos */
+}
+
 /* === TOGGLER PERSONALIZADO === */
 .custom-toggler {
   border: none;
@@ -80,6 +95,7 @@
   transition: all var(--transition-fast);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0; /* No permitir que se encoja */
 }
 
 .custom-toggler:hover {
@@ -166,65 +182,60 @@
   position: absolute;
   bottom: -2px;
   left: 50%;
-  width: 60%;
+  width: 20px;
   height: 2px;
   background: var(--gradient-primary);
-  transform: translateX(-50%);
   border-radius: 2px;
+  transform: translateX(-50%);
 }
 
 .nav-icon {
-  font-size: 1rem;
-  margin-right: 0.5rem;
-  width: 18px;
+  margin-right: var(--spacing-sm);
+  width: 16px;
   text-align: center;
-}
-
-/* === INFORMACIÓN DE USUARIO === */
-.user-info {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: var(--border-radius-lg);
-  padding: 0.5rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
   transition: all var(--transition-fast);
 }
 
-.user-info:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
+.custom-nav-link:hover .nav-icon,
+.custom-nav-link.active .nav-icon {
+  color: white;
+  transform: scale(1.1);
+}
+
+/* === USER INFO === */
+.user-info {
+  color: rgba(255, 255, 255, 0.9);
+  transition: all var(--transition-fast);
 }
 
 .user-avatar {
   font-size: 1.5rem;
-  color: var(--color-primary-light);
+  color: var(--color-primary);
+  transition: all var(--transition-fast);
 }
 
-.user-details {
-  line-height: 1.2;
+.user-info:hover .user-avatar {
+  color: white;
+  transform: scale(1.1);
 }
 
 .user-name {
-  font-size: 0.875rem;
   font-weight: var(--font-weight-semibold);
-  color: white;
-  margin-bottom: 0.125rem;
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
 }
 
 .user-email {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: rgba(255, 255, 255, 0.7);
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 
 /* === BOTONES MODERNOS === */
 .btn-modern {
   border-radius: var(--border-radius-lg);
   font-weight: var(--font-weight-medium);
-  padding: 0.625rem 1.25rem;
   transition: all var(--transition-fast);
   position: relative;
   overflow: hidden;
@@ -240,21 +251,17 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
+  transition: left 0.5s;
 }
 
 .btn-modern:hover::before {
   left: 100%;
 }
 
-.btn-modern:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
 .btn-outline-light.btn-modern {
   border: 2px solid rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   color: white;
 }
 
@@ -291,10 +298,56 @@
   .navbar-toggler {
     display: none;
   }
+
+  .mobile-controls {
+    display: none;
+  }
 }
 
-/* En mobile, usar el sistema de collapse mejorado */
+/* === ESTILOS MÓVILES ESPECÍFICOS === */
 @media (max-width: 991.98px) {
+  /* Controles móviles */
+  .mobile-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  /* Campanita móvil - Mejorar área de toque */
+  .mobile-notification-bell .notification-bell {
+    width: 48px !important;
+    height: 48px !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .mobile-notification-bell .notification-bell:hover,
+  .mobile-notification-bell .notification-bell:active {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: scale(1.05);
+  }
+
+  /* Badge más visible en móvil */
+  .mobile-notification-bell .notification-badge {
+    width: 14px !important;
+    height: 14px !important;
+    top: -2px !important;
+    right: -2px !important;
+    border: 3px solid rgba(15, 23, 42, 0.9) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Dropdown ajustado para móvil */
+  .mobile-notification-bell .notification-dropdown {
+    right: -20px !important;
+    width: 320px !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+
+  /* Navbar collapse mejorado */
   .navbar-collapse {
     position: absolute;
     top: 100%;
@@ -343,23 +396,29 @@
     justify-content: center;
     transform: translateY(20px);
     opacity: 0;
-    animation: slideInUserInfo 0.4s ease-out 0.2s forwards;
+    animation: slideInUp 0.3s ease-out 0.3s forwards;
   }
 
-  .btn-modern {
-    width: 100%;
-    margin-top: 0.5rem;
-    transform: translateY(20px);
-    opacity: 0;
-    animation: slideInButton 0.4s ease-out 0.25s forwards;
+  /* Container fluid ajustes */
+  .container-fluid {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    position: relative;
+  }
+
+  .navbar-brand {
+    flex-shrink: 0;
+    margin-right: auto;
   }
 }
 
-/* Animaciones personalizadas */
+/* === ANIMACIONES === */
 @keyframes slideInItems {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
@@ -378,7 +437,7 @@
   }
 }
 
-@keyframes slideInUserInfo {
+@keyframes slideInUp {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -389,82 +448,34 @@
   }
 }
 
-@keyframes slideInButton {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 575.98px) {
-  .navbar {
-    min-height: 60px;
-    padding: 0.5rem 0;
-  }
-
-  .brand-icon {
-    width: 35px;
-    height: 35px;
-    font-size: 1rem;
-  }
-
-  .brand-text {
-    font-size: 1.25rem;
-  }
-
+/* === MEJORAS DE ACCESIBILIDAD === */
+@media (max-width: 767.98px) {
+  /* Área de toque mínima recomendada para móviles */
+  .mobile-notification-bell .notification-bell,
   .custom-toggler {
-    width: 40px;
-    height: 40px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
-  .toggler-line {
-    width: 20px;
-  }
-}
-
-/* === EFECTOS ADICIONALES === */
-@keyframes navSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  /* Espaciado entre elementos táctiles */
+  .mobile-controls {
+    gap: 1rem;
   }
 }
 
-.navbar-nav .nav-item {
-  animation: navSlideIn 0.4s ease-out;
-}
-
-.navbar-nav .nav-item:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.navbar-nav .nav-item:nth-child(3) {
-  animation-delay: 0.2s;
-}
-
-/* === ACCESSIBILITY === */
-.custom-nav-link:focus,
-.btn-modern:focus,
+/* === ESTADOS DE FOCUS MEJORADOS === */
+.mobile-notification-bell .notification-bell:focus,
 .custom-toggler:focus {
-  outline: none;
-  box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
 }
 
-/* === DARK MODE READY === */
-@media (prefers-color-scheme: dark) {
-  .navbar-transparent {
-    background: rgba(0, 0, 0, 0.8) !important;
-  }
-  
-  .navbar-scrolled {
-    background: rgba(0, 0, 0, 0.95) !important;
+/* === PREVENIR SCROLL HORIZONTAL === */
+@media (max-width: 575.98px) {
+  .mobile-notification-bell .notification-dropdown {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: 300px !important;
   }
 }
